@@ -31,12 +31,14 @@
     <style>
         :root {
             --primary-color: #007aff;
-            /* Royal Blue */
+            --primary-gradient: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            /* Modern Blue Gradient */
             --background-color: #121212;
             --container-bg: #1c1c1e;
-            /* Darker iOS feel */
             --text-color: #ffffff;
             --bubble-bg-me: #007aff;
+            /* Fallback */
+            --bubble-bg-me-gradient: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
             --bubble-text-me: #ffffff;
             --bubble-bg-other: #2c2c2e;
             --error-color: #ff453a;
@@ -218,6 +220,7 @@
         /* Main App */
         .app-header {
             background: var(--container-bg);
+            /* Kept simple for now or change to gradient if desired */
             padding: 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
@@ -293,7 +296,6 @@
             transform: translateX(5px);
         }
 
-        
         .contact-avatar {
             width: 50px;
             height: 50px;
@@ -458,7 +460,8 @@
 
         .message.me {
             align-self: flex-end;
-            background: var(--bubble-bg-me);
+            background: var(--bubble-bg-me-gradient);
+            /* Gradient Bubble */
             color: var(--bubble-text-me);
             border-bottom-right-radius: 4px;
         }
@@ -924,16 +927,18 @@
         }
 
         /* Read Receipts */
+        /* Read Receipts */
         .msg-status {
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             margin-left: 5px;
-            color: rgba(255, 255, 255, 0.5);
-            /* Default Gray */
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: bold;
         }
 
         .msg-status.seen {
-            color: #2196F3;
-            /* Blue for Seen */
+            color: #00E5FF;
+            /* Electric Cyan for high visibility */
+            text-shadow: 0 0 5px rgba(0, 229, 255, 0.4);
         }
     </style>
 </head>
