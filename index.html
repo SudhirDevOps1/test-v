@@ -30,26 +30,30 @@
         rel="stylesheet">
     <style>
         :root {
-            --primary-color: #00A878;
+            --primary-color: #007aff;
+            /* Royal Blue */
             --background-color: #121212;
-            --container-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --bubble-bg-me: #00A878;
-            --bubble-text-me: #121212;
-            --bubble-bg-other: #2a2a2a;
-            --error-color: #ff5252;
-            --success-color: #00A878;
-            --nav-bg: #181818;
-            --input-bg: rgba(255, 255, 255, 0.05);
-            --border-color: rgba(255, 255, 255, 0.1);
+            --container-bg: #1c1c1e;
+            /* Darker iOS feel */
+            --text-color: #ffffff;
+            --bubble-bg-me: #007aff;
+            --bubble-text-me: #ffffff;
+            --bubble-bg-other: #2c2c2e;
+            --error-color: #ff453a;
+            --success-color: #30d158;
+            --nav-bg: #161618;
+            --input-bg: rgba(255, 255, 255, 0.1);
+            --border-color: rgba(255, 255, 255, 0.15);
         }
 
         body.light-mode {
-            --background-color: #f5f5f5;
+            --background-color: #f2f2f7;
             --container-bg: #ffffff;
-            --text-color: #121212;
-            --bubble-bg-other: #e0e0e0;
-            --nav-bg: #eeeeee;
+            --text-color: #000000;
+            --bubble-bg-me: #007aff;
+            --bubble-text-me: #ffffff;
+            --bubble-bg-other: #e9e9eb;
+            --nav-bg: #f9f9f9;
             --input-bg: rgba(0, 0, 0, 0.05);
             --border-color: rgba(0, 0, 0, 0.1);
         }
@@ -870,6 +874,9 @@
             padding: 0 10px;
             color: var(--primary-color);
             transition: transform 0.2s;
+            display: flex;
+            /* Ensure alignment */
+            align-items: center;
         }
 
         .attach-btn:hover {
@@ -924,8 +931,8 @@
         }
 
         .msg-status.seen {
-            color: #ff69b4;
-            /* Pink for Seen */
+            color: #2196F3;
+            /* Blue for Seen */
         }
     </style>
 </head>
@@ -1671,9 +1678,17 @@
 
                 btn.textContent = '📎';
                 btn.disabled = false;
+                btn.textContent = '📎';
+                btn.disabled = false;
             } catch (err) {
                 console.error("Upload error:", err);
-                await alert("Failed to send image: " + err.message);
+                if (err.code === 'storage/unauthorized') {
+                    await alert("Upload failed: Permission denied. Please check your internet connection or Storage rules.");
+                } else if (err.code === 'storage/retry-limit-exceeded') {
+                    await alert("Upload failed: Network issue. Try again.");
+                } else {
+                    await alert("Failed to send image: " + err.message);
+                }
                 document.getElementById('attachBtn').textContent = '📎';
                 document.getElementById('attachBtn').disabled = false;
             }
@@ -2832,7 +2847,10 @@
 
         // Image Attachment Event Listeners
         document.getElementById('attachBtn').addEventListener('click', () => {
-            document.getElementById('imageInput').click();
+            console.log('Attach Clicked');
+            const fileInput = document.getElementById('imageInput');
+            if (fileInput) fileInput.click();
+            else alert('Error: Image input not found');
         });
 
         document.getElementById('imageInput').addEventListener('change', (e) => {
