@@ -1099,6 +1099,26 @@
                             Copy</button>
                     </div>
                 </div>
+                <div class="settings-section" id="systemStatsSection">
+                    <h3>System Usage & Health</h3>
+                    <div class="setting-item">
+                        <div>
+                            <div style="font-weight: 500;">Users & Groups</div>
+                            <div style="font-size: 0.8rem; opacity: 0.6;" id="systemCounts">Loading stats...</div>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <div>
+                            <div style="font-weight: 500;">Session Bandwidth</div>
+                            <div style="font-size: 0.8rem; opacity: 0.6;" id="sessionBandwidth">0.00 KB</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-secondary" id="runCleanupBtn" style="font-size:0.8rem;">🧹 Cleanup
+                            Old Data</button>
+                    </div>
+                </div>
+
                 <div class="settings-section">
                     <h3>Account</h3>
                     <button class="btn" id="editProfileBtn">Edit Profile</button>
@@ -1212,7 +1232,7 @@
   storageBucket: "circle-20122.firebasestorage.app",
   messagingSenderId: "131779082255",
   appId: "1:131779082255:web:94e048b6955da350860b7a"
-};
+};;
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -1228,6 +1248,19 @@
         let autoDeleteEnabled = false;
         const globalListeners = new Map();
         const chatListeners = new Map();
+
+        // Data Usage Tracker
+        let totalSessionBytes = 0;
+        function trackDataTransfer(data) {
+            try {
+                const bytes = JSON.stringify(data).length;
+                totalSessionBytes += bytes;
+                const kb = totalSessionBytes / 1024;
+                const display = kb > 1024 ? (kb / 1024).toFixed(2) + ' MB' : kb.toFixed(2) + ' KB';
+                const el = document.getElementById('sessionBandwidth');
+                if (el) el.textContent = display;
+            } catch (e) { }
+        }
 
         // Custom Popup System
         const popupUI = {
@@ -1557,10 +1590,12 @@
                 // We only cleanup private messages for now as group policy might differ
                 const contactsSnap = await get(ref(db, `contacts/${currentUser.uid}`));
                 if (contactsSnap.exists()) {
+                    trackDataTransfer(contactsSnap.val());
                     for (const friendId of Object.keys(contactsSnap.val())) {
                         const chatId = getChatId(currentUser.uid, friendId);
                         const msgsSnap = await get(ref(db, `messages/${chatId}`));
                         if (msgsSnap.exists()) {
+                            trackDataTransfer(msgsSnap.val());
                             const updates = {};
                             Object.entries(msgsSnap.val()).forEach(([msgId, msg]) => {
                                 if (msg.timestamp < tenDaysAgo) {
@@ -1629,6 +1664,7 @@
             const connectedRef = ref(db, '.info/connected');
 
             onValue(connectedRef, async (snapshot) => {
+                trackDataTransfer(snapshot.val());
                 if (snapshot.val() === true) {
                     if (hideLastSeen) {
                         await remove(presenceRef);
@@ -1691,6 +1727,7 @@
 
             // Listen for Groups
             const groupsUnsub = onValue(ref(db, `groups`), (groupsSnap) => {
+                trackDataTransfer(groupsSnap.val());
                 groupsList.innerHTML = '';
                 if (groupsSnap.exists()) {
                     Object.entries(groupsSnap.val()).forEach(([groupId, groupData]) => {
@@ -1706,10 +1743,12 @@
             // Listen for Private Contacts
             const contactsRef = ref(db, `contacts/${currentUser.uid}`);
             const contactsUnsub = onValue(contactsRef, async (snapshot) => {
+                trackDataTransfer(snapshot.val());
                 privateList.innerHTML = '';
                 if (snapshot.exists()) {
                     for (const [friendId, data] of Object.entries(snapshot.val())) {
                         const friendData = await get(ref(db, `users/${friendId}`));
+                        trackDataTransfer(friendData.val());
                         if (friendData.exists()) {
                             addChatToUI(friendId, friendData.val(), false);
                         }
@@ -1732,6 +1771,7 @@
 
             const lastMsgPath = isGroup ? `lastMessages/groups/${chatId}` : `lastMessages/${currentUser.uid}/${chatId}`;
             const lastMsgUnsub = onValue(ref(db, lastMsgPath), async (snap) => {
+                trackDataTransfer(snap.val());
                 const previewEl = document.getElementById(`preview-${chatId}`);
                 if (previewEl) {
                     if (snap.exists()) {
@@ -1773,6 +1813,7 @@
 
             if (!isGroup) {
                 const statusUnsub = onValue(ref(db, `status/${id}`), (statusSnap) => {
+                    trackDataTransfer(statusSnap.val());
                     const statusIndicator = document.getElementById(`status-${id}`);
                     if (statusIndicator) {
                         statusIndicator.style.display = (statusSnap.exists() && statusSnap.val().state === 'online') ? 'inline-block' : 'none';
@@ -1782,6 +1823,7 @@
             }
 
             const unreadUnsub = onValue(ref(db, `unread/${currentUser.uid}/${chatId}`), (unreadSnap) => {
+                trackDataTransfer(unreadSnap.val());
                 const unreadBadge = document.getElementById(`unread-${chatId}`);
                 if (unreadBadge) {
                     if (unreadSnap.exists() && unreadSnap.val() > 0) {
@@ -1893,6 +1935,9 @@
             const myKeys = await getKeys();
 
             const msgUnsub = onValue(messagesRef, async (snapshot) => {
+                const data = snapshot.val();
+                trackDataTransfer(data);
+
                 const messagesContainer = document.getElementById('chatMessages');
                 const typingIndicator = document.getElementById('typingIndicator');
 
@@ -1992,6 +2037,7 @@
 
                     // Single reactions listener for the whole chat
                     const reactUnsub = onValue(ref(db, `reactions/${currentChatId}`), (rSnap) => {
+                        trackDataTransfer(rSnap.val());
                         if (rSnap.exists()) {
                             Object.entries(rSnap.val()).forEach(([mId, reactions]) => {
                                 const badge = document.getElementById(`reactions-${mId}`);
@@ -2136,6 +2182,7 @@
 
         function listenForTyping() {
             const unsub = onValue(ref(db, `typing/${currentChatId}/${currentChatUser}`), (snapshot) => {
+                trackDataTransfer(snapshot.val());
                 const typingIndicator = document.getElementById('typingIndicator');
                 const isTyping = snapshot.exists() && snapshot.val() === true;
                 if (isTyping) {
@@ -2204,6 +2251,7 @@
             const sentList = document.getElementById('sentRequestsList');
 
             onValue(ref(db, `requests/${user.uid}`), async (snapshot) => {
+                trackDataTransfer(snapshot.val());
                 requestsList.innerHTML = '';
 
                 if (!snapshot.exists()) {
@@ -2248,6 +2296,7 @@
 
             // Listen for Sent Requests
             onValue(ref(db, `sentRequests/${user.uid}`), async (snapshot) => {
+                trackDataTransfer(snapshot.val());
                 sentList.innerHTML = '';
                 if (!snapshot.exists()) {
                     sentList.innerHTML = '<div class="empty-state"><p style="font-size:0.8rem;">No sent requests</p></div>';
@@ -2291,7 +2340,9 @@
         function loadSettings() {
             // Load auto-delete setting
             onValue(ref(db, `users/${currentUser.uid}/autoDelete`), (snapshot) => {
-                autoDeleteEnabled = snapshot.exists() ? snapshot.val() : false;
+                const data = snapshot.val();
+                trackDataTransfer(data);
+                autoDeleteEnabled = snapshot.exists() ? data : false;
                 const toggle = document.getElementById('autoDeleteToggle');
                 if (autoDeleteEnabled) {
                     toggle.classList.add('active');
@@ -2300,9 +2351,28 @@
                 }
             });
 
+            // Load System Stats
+            async function refreshSystemStats() {
+                try {
+                    const usersSnap = await get(ref(db, 'publicIds'));
+                    const groupsSnap = await get(ref(db, 'groups'));
+                    trackDataTransfer(usersSnap.val());
+                    trackDataTransfer(groupsSnap.val());
+
+                    const userCount = usersSnap.exists() ? Object.keys(usersSnap.val()).length : 0;
+                    const groupCount = groupsSnap.exists() ? Object.keys(groupsSnap.val()).length : 0;
+
+                    document.getElementById('systemCounts').textContent = `${userCount} Users | ${groupCount} Groups`;
+                } catch (e) {
+                    document.getElementById('systemCounts').textContent = "Stats unavailable";
+                }
+            }
+            refreshSystemStats();
+
             // Load and display public ID
             get(ref(db, `users/${currentUser.uid}/publicId`)).then((snapshot) => {
                 if (snapshot.exists()) {
+                    trackDataTransfer(snapshot.val());
                     document.getElementById('userPublicId').textContent = snapshot.val();
                 }
             });
@@ -2324,12 +2394,25 @@
             this.classList.toggle('active');
         });
 
+        document.getElementById('runCleanupBtn').addEventListener('click', async () => {
+            if (await confirm("This will scan all your chats and delete messages older than 10 days. Proceed?")) {
+                const btn = document.getElementById('runCleanupBtn');
+                btn.textContent = "⏳ Processing...";
+                btn.disabled = true;
+                await cleanupOldMessages();
+                await alert("Cleanup complete! Storage has been optimized.");
+                btn.textContent = "🧹 Cleanup Old Data";
+                btn.disabled = false;
+            }
+        });
+
         // Block/Unblock Logic
         async function loadBlockedUsers() {
             const list = document.getElementById('blockedUsersList');
             if (!list) return;
 
             onValue(ref(db, `blocks/${currentUser.uid}`), async (snapshot) => {
+                trackDataTransfer(snapshot.val());
                 list.innerHTML = '';
                 if (!snapshot.exists()) {
                     list.innerHTML = '<p style="font-size:0.8rem; opacity:0.5; padding:10px;">No blocked users</p>';
@@ -2627,6 +2710,7 @@
         function listenForIncomingCalls() {
             onValue(ref(db, `incomingCalls/${currentUser.uid}`), async (snapshot) => {
                 const data = snapshot.val();
+                trackDataTransfer(data);
                 if (data) {
                     // Show Incoming Call UI
                     const accept = await confirm(`Incoming ${data.isVideo ? 'Video' : 'Voice'} Call from ${data.callerName}. Accept?`);
@@ -2647,6 +2731,7 @@
             const callDocRef = ref(db, `calls/${callId}`);
             const callDataSpec = await get(callDocRef);
             const callData = callDataSpec.val();
+            trackDataTransfer(callData);
             callStartTime = Date.now();
 
             // 1. Get Media with constraints
@@ -2790,6 +2875,7 @@
         async function loadCallLogs() {
             const list = document.getElementById('callsList');
             onValue(ref(db, `callLogs/${currentUser.uid}`), (snap) => {
+                trackDataTransfer(snap.val());
                 list.innerHTML = '';
                 if (!snap.exists()) {
                     list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>No call history</p></div>';
