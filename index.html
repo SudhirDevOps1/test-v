@@ -860,6 +860,73 @@
                 opacity: 1;
             }
         }
+
+        /* Media & Usage Limit Styles */
+        .attach-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0 10px;
+            color: var(--primary-color);
+            transition: transform 0.2s;
+        }
+
+        .attach-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .message-img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            margin-top: 5px;
+            display: block;
+            cursor: pointer;
+        }
+
+        .usage-block-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .usage-block-screen.active {
+            display: flex;
+        }
+
+        .usage-block-screen h1 {
+            color: #f44336;
+            margin-bottom: 20px;
+        }
+
+        .usage-block-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        /* Read Receipts */
+        .msg-status {
+            font-size: 0.7rem;
+            margin-left: 5px;
+            color: rgba(255, 255, 255, 0.5);
+            /* Default Gray */
+        }
+
+        .msg-status.seen {
+            color: #ff69b4;
+            /* Pink for Seen */
+        }
     </style>
 </head>
 
@@ -975,6 +1042,8 @@
                 </div>
             </div>
             <div class="chat-input-container">
+                <input type="file" id="imageInput" accept="image/*" style="display:none;">
+                <button class="attach-btn" id="attachBtn" title="Send Image">📎</button>
                 <button id="selfDestructBtn"
                     style="background:none; border:none; color:var(--text-color); opacity:0.5; cursor:pointer; font-size:1.2rem;"
                     title="Self-Destructing Message">⏳</button>
@@ -1219,6 +1288,14 @@
                 </div>
             </div>
         </div>
+
+        <!-- Usage Block Screen -->
+        <div class="usage-block-screen" id="usageBlockScreen">
+            <div class="usage-block-icon">⏳</div>
+            <h1>Daily Limit Reached!</h1>
+            <p>Aapne aaj ki 3 ghante ki limit poori kar li hai.</p>
+            <p style="opacity:0.7; margin-top: 10px;">Kal dubara milte hain!</p>
+        </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -1226,6 +1303,7 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
         import { getDatabase, ref, set, get, onValue, push, update, remove, onDisconnect, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js';
+        import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
 
         // ⚠️ REPLACE WITH YOUR FIREBASE CONFIG
         const firebaseConfig = {
@@ -1241,6 +1319,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+        const storage = getStorage(app);
 
         let currentUser = null;
         let currentChatId = null;
@@ -1252,6 +1331,41 @@
         let autoDeleteEnabled = false;
         const globalListeners = new Map();
         const chatListeners = new Map();
+
+        // Usage Limit Configuration
+        const DAILY_LIMIT_MINUTES = 180; // 3 Hours
+        let usageMinutes = 0;
+
+        function checkUsageLimit() {
+            const today = new Date().toLocaleDateString();
+            const savedDate = localStorage.getItem('usage_date');
+            usageMinutes = parseInt(localStorage.getItem('usage_minutes') || '0');
+
+            if (savedDate !== today) {
+                usageMinutes = 0;
+                localStorage.setItem('usage_date', today);
+                localStorage.setItem('usage_minutes', '0');
+            }
+
+            if (usageMinutes >= DAILY_LIMIT_MINUTES) {
+                document.getElementById('usageBlockScreen').classList.add('active');
+            }
+        }
+
+        function startUsageTimer() {
+            setInterval(() => {
+                if (currentUser && !document.hidden) {
+                    usageMinutes++;
+                    localStorage.setItem('usage_minutes', usageMinutes.toString());
+                    if (usageMinutes >= DAILY_LIMIT_MINUTES) {
+                        document.getElementById('usageBlockScreen').classList.add('active');
+                    }
+                }
+            }, 60000); // Check every minute
+        }
+
+        checkUsageLimit();
+        startUsageTimer();
 
         // Data Usage Tracker
         let totalSessionBytes = 0;
@@ -1470,6 +1584,98 @@
                 console.error("Decryption failure:", e);
                 // Fallback for old messages that might be plain text or old RSA format
                 return "🔒 Encryption mismatch / Old message";
+            }
+        }
+
+        // --- Image Compression & Upload ---
+        async function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxSide = 1000;
+
+                        if (width > height && width > maxSide) {
+                            height *= maxSide / width;
+                            width = maxSide;
+                        } else if (height > maxSide) {
+                            width *= maxSide / height;
+                            height = maxSide;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        canvas.toBlob((blob) => {
+                            resolve(blob);
+                        }, 'image/jpeg', 0.7); // 70% quality compression
+                    };
+                };
+            });
+        }
+
+        async function handleImageUpload(file) {
+            if (!currentChatId) return;
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                await alert("File too large. Maximum size is 2MB.");
+                return;
+            }
+
+            try {
+                const btn = document.getElementById('attachBtn');
+                btn.textContent = '⏳';
+                btn.disabled = true;
+
+                const compressedBlob = await compressImage(file);
+                const fileRef = sRef(storage, `chats/${currentChatId}/${Date.now()}_${file.name}`);
+
+                const snapshot = await uploadBytes(fileRef, compressedBlob);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                // Send as message
+                const msgData = {
+                    sender: currentUser.uid,
+                    senderName: document.getElementById('settingsName').textContent || 'User',
+                    timestamp: serverTimestamp(),
+                    type: 'image',
+                    url: downloadURL,
+                    isEncrypted: false,
+                    status: 'sent'
+                };
+
+                const path = isGroupChat ? `groupMessages/${currentChatId}` : `messages/${currentChatId}`;
+                const newMsgRef = push(ref(db, path));
+                await set(newMsgRef, msgData);
+
+                // Update last message
+                const lastMsgData = {
+                    text: '📷 Photo',
+                    sender: currentUser.uid,
+                    timestamp: serverTimestamp()
+                };
+                if (isGroupChat) {
+                    await set(ref(db, `lastMessages/groups/${currentChatId}`), lastMsgData);
+                } else {
+                    await set(ref(db, `lastMessages/${currentUser.uid}/${currentChatId}`), lastMsgData);
+                    await set(ref(db, `lastMessages/${currentChatUser}/${currentChatId}`), lastMsgData);
+                    await increment(ref(db, `unread/${currentChatUser}/${currentChatId}`));
+                }
+
+                btn.textContent = '📎';
+                btn.disabled = false;
+            } catch (err) {
+                console.error("Upload error:", err);
+                await alert("Failed to send image: " + err.message);
+                document.getElementById('attachBtn').textContent = '📎';
+                document.getElementById('attachBtn').disabled = false;
             }
         }
 
@@ -1979,10 +2185,32 @@
                             senderInfo = `<div style="font-size:0.75rem; color:var(--primary-color); font-weight:600; margin-bottom:2px;">${msg.senderName || 'User'}</div>`;
                         }
 
+                        let contentHtml = '';
+                        if (msg.type === 'image') {
+                            contentHtml = `<img src="${msg.url}" class="message-img" alt="Shared Image">`;
+                        } else {
+                            contentHtml = `<span class="msg-text">${msg.isSelfDestruct ? '⏳ View Once Message' : displayVal}</span>`;
+                        }
+
+                        // Read Receipts Logic
+                        if (msg.sender !== currentUser.uid && msg.status !== 'seen' && !document.hidden) {
+                            const msgPath = isGroupChat ? `groupMessages/${currentChatId}/${msgId}/status` : `messages/${currentChatId}/${msgId}/status`;
+                            // Use set to avoid merging issues, though update is fine too.
+                            // We use a timeout/async to not block rendering
+                            setTimeout(() => set(ref(db, msgPath), 'seen'), 100);
+                        }
+
+                        let ticksHtml = '';
+                        if (msg.sender === currentUser.uid) {
+                            const isSeen = msg.status === 'seen';
+                            ticksHtml = `<span class="msg-status ${isSeen ? 'seen' : ''}">✓✓</span>`;
+                        }
+
                         messageDiv.innerHTML = `
                             ${senderInfo}
-                            <span class="msg-text">${msg.isSelfDestruct ? '⏳ View Once Message' : displayVal}</span>
-                            <div class="message-time">${time}</div>
+                            ${contentHtml}
+                            <div class="message-time">${time} ${ticksHtml}</div>
+                            <div class="reaction-badge" style="display:none;" id="reactions-${msgId}"></div>
                             <div class="reaction-badge" style="display:none;" id="reactions-${msgId}"></div>
                             <div class="reaction-picker" id="picker-${msgId}">
                                 <span class="reaction-item">❤️</span>
@@ -2120,7 +2348,8 @@
                     isEncrypted: !isGroupChat,
                     isSelfDestruct: isSelfDestructEnabled,
                     timestamp: Date.now(),
-                    type: 'text'
+                    type: 'text',
+                    status: 'sent'
                 });
 
                 if (isSelfDestructEnabled) {
@@ -2398,6 +2627,19 @@
             this.classList.toggle('active');
         });
 
+        // Image Attachment Event Listeners
+        document.getElementById('attachBtn').addEventListener('click', () => {
+            document.getElementById('imageInput').click();
+        });
+
+        document.getElementById('imageInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageUpload(file);
+                e.target.value = ''; // Reset input
+            }
+        });
+
         document.getElementById('runCleanupBtn').addEventListener('click', async () => {
             if (await confirm("This will scan all your chats and delete messages older than 10 days. Proceed?")) {
                 const btn = document.getElementById('runCleanupBtn');
@@ -2585,6 +2827,19 @@
                 loadContacts();
             } catch (e) {
                 await alert('Error creating group: ' + e.message);
+            }
+        });
+
+        // Image Attachment Event Listeners
+        document.getElementById('attachBtn').addEventListener('click', () => {
+            document.getElementById('imageInput').click();
+        });
+
+        document.getElementById('imageInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageUpload(file);
+                e.target.value = ''; // Reset input
             }
         });
 
@@ -2905,6 +3160,22 @@
         }
 
         // Global Click to close pickers
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && currentChatId) {
+                const path = isGroupChat ? `groupMessages/${currentChatId}` : `messages/${currentChatId}`;
+                get(ref(db, path)).then((snap) => {
+                    if (snap.exists()) {
+                        Object.entries(snap.val()).forEach(([msgId, msg]) => {
+                            if (msg.sender !== currentUser.uid && msg.status !== 'seen') {
+                                const msgPath = isGroupChat ? `groupMessages/${currentChatId}/${msgId}/status` : `messages/${currentChatId}/${msgId}/status`;
+                                setTimeout(() => set(ref(db, msgPath), 'seen'), 100);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
         document.addEventListener('click', () => {
             document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('active'));
         });
