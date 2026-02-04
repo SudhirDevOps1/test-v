@@ -1,0 +1,2826 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApnaChat - Privacy First Messaging</title>
+
+    <!-- Meta Tags -->
+    <meta name="description"
+        content="ApnaChat - A secure, end-to-end encrypted messaging app with advanced privacy features like hybrid encryption and self-destructing messages.">
+    <meta name="keywords" content="messaging, privacy, encryption, E2EE, secure chat, apnachat">
+    <meta name="author" content="ApnaChat Team">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="ApnaChat - Secure Messaging">
+    <meta property="og:description" content="Privacy-first messaging with end-to-end encryption.">
+    <meta property="og:image" content="https://avatars.githubusercontent.com/u/1234567?v=4">
+    <!-- Placeholder for app icon -->
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="ApnaChat - Secure Messaging">
+    <meta property="twitter:description" content="Privacy-first messaging with end-to-end encryption.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00A878;
+            --background-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --bubble-bg-me: #00A878;
+            --bubble-text-me: #121212;
+            --bubble-bg-other: #2a2a2a;
+            --error-color: #ff5252;
+            --success-color: #00A878;
+            --nav-bg: #181818;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body.light-mode {
+            --background-color: #f5f5f5;
+            --container-bg: #ffffff;
+            --text-color: #121212;
+            --bubble-bg-other: #e0e0e0;
+            --nav-bg: #eeeeee;
+            --input-bg: rgba(0, 0, 0, 0.05);
+            --border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            max-width: 450px;
+            width: 100%;
+            height: 100dvh;
+            background: var(--container-bg);
+            box-shadow: 0 0 50px rgba(0, 168, 120, 0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                height: 90vh;
+                border-radius: 20px;
+                margin: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .app-container {
+                max-width: 100%;
+                height: 100dvh;
+            }
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Auth Screens */
+        .auth-screen {
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .auth-box {
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .auth-box h1 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .auth-box p {
+            text-align: center;
+            margin-bottom: 2rem;
+            opacity: 0.7;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.9rem;
+            background: var(--primary-color);
+            color: var(--bubble-text-me);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background: #00926b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 168, 120, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            margin-top: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 168, 120, 0.1);
+        }
+
+        .error-msg {
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        /* Main App */
+        .app-header {
+            background: var(--container-bg);
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .app-header h2 {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+        }
+
+        .header-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .header-icon:hover {
+            opacity: 1;
+        }
+
+        .app-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .bottom-nav {
+            display: flex;
+            background: var(--container-bg);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.5rem;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 0.7rem 0;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-item:hover {
+            background: rgba(0, 168, 120, 0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(0, 168, 120, 0.2);
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* Chat List */
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .contact-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .contact-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: var(--bubble-text-me);
+            flex-shrink: 0;
+        }
+
+        .contact-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .contact-name {
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            margin-left: 0.5rem;
+            display: inline-block;
+        }
+
+        .contact-preview {
+            font-size: 0.85rem;
+            opacity: 0.6;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .unread-badge {
+            background: var(--primary-color);
+            color: var(--bubble-text-me);
+            border-radius: 50%;
+            min-width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .delete-chat-btn {
+            padding: 10px;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: 0.3s;
+        }
+
+        .delete-chat-btn:hover {
+            opacity: 1;
+            color: #ff4757;
+        }
+
+        .call-log-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            animation: messageIn 0.3s ease;
+        }
+
+        .call-icon {
+            font-size: 1.5rem;
+        }
+
+        .call-details {
+            flex: 1;
+        }
+
+        .call-time {
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        /* Chat Screen */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 0.8rem 1rem;
+            border-radius: 18px;
+            margin-bottom: 0.5rem;
+            word-wrap: break-word;
+            animation: messageIn 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .reaction-badge {
+            position: absolute;
+            bottom: -10px;
+            right: 5px;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2px 5px;
+            font-size: 0.7rem;
+            display: flex;
+            gap: 2px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
+
+        .reaction-picker {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--container-bg);
+            border: 1px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 5px 10px;
+            display: none;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+        }
+
+        /* If message is too high, show picker below */
+        .message:first-child .reaction-picker,
+        .message:nth-child(2) .reaction-picker {
+            top: auto;
+            bottom: -45px;
+        }
+
+        .reaction-picker.active {
+            display: flex;
+        }
+
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.me {
+            align-self: flex-end;
+            background: var(--bubble-bg-me);
+            color: var(--bubble-text-me);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.other {
+            align-self: flex-start;
+            background: var(--bubble-bg-other);
+            color: var(--text-color);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.6;
+            margin-top: 0.3rem;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 0.8rem 1rem;
+            background: var(--bubble-bg-other);
+            border-radius: 18px;
+            margin-bottom: 0.5rem;
+        }
+
+        .typing-indicator.show {
+            display: block;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--text-color);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: typingDot 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingDot {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            background: var(--container-bg);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 50%;
+            color: var(--bubble-text-me);
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            background: #00926b;
+            transform: scale(1.1);
+        }
+
+        /* Settings */
+        .settings-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .settings-section h3 {
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary-color);
+        }
+
+        .toggle-switch::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s;
+        }
+
+        .toggle-switch.active::before {
+            left: 27px;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--container-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 90%;
+            width: 350px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            color: var(--primary-color);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Call Interface */
+        .call-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #121212, #1e1e1e);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .call-screen.active {
+            display: flex;
+        }
+
+        .call-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .call-info h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .call-status {
+            opacity: 0.6;
+            margin-bottom: 2rem;
+        }
+
+        .call-controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .call-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .call-btn.mute {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+
+        .call-btn.end {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .call-btn:hover {
+            transform: scale(1.1);
+        }
+
+        #remoteVideo,
+        #localVideo {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        #localVideo {
+            width: 120px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            border: 2px solid var(--primary-color);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        @media (max-width: 400px) {
+            .app-container {
+                max-width: 100%;
+            }
+        }
+
+        /* Custom Alert & Confirm Modals */
+        .custom-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .custom-popup.active {
+            display: flex;
+        }
+
+        .popup-content {
+            background: var(--container-bg);
+            padding: 2rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            transform: scale(0.9);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .custom-popup.active .popup-content {
+            transform: scale(1);
+        }
+
+        .popup-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .popup-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .popup-message {
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .popup-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Login Screen -->
+        <div class="screen auth-screen active" id="loginScreen">
+            <div class="auth-box">
+                <h1>🟢 ApnaChat</h1>
+                <p>Privacy-first messaging</p>
+                <div class="error-msg" id="loginError"></div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                </div>
+                <button class="btn" id="loginBtn">Login</button>
+                <button class="btn btn-secondary" id="showSignupBtn">Create Account</button>
+            </div>
+        </div>
+
+        <!-- Signup Screen -->
+        <div class="screen auth-screen" id="signupScreen">
+            <div class="auth-box">
+                <h1>Create Account</h1>
+                <p>Join ApnaChat</p>
+                <div class="error-msg" id="signupError"></div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" placeholder="your@email.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="••••••••">
+                </div>
+                <button class="btn" id="signupBtn">Sign Up</button>
+                <button class="btn btn-secondary" id="showLoginBtn">Back to Login</button>
+            </div>
+        </div>
+
+        <!-- Profile Setup Modal -->
+        <div class="modal" id="profileModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Setup Profile</h3>
+                </div>
+                <div class="input-group">
+                    <label>Display Name</label>
+                    <input type="text" id="profileName" maxlength="20" placeholder="Your name">
+                </div>
+                <div class="input-group">
+                    <label>Bio</label>
+                    <input type="text" id="profileBio" maxlength="100" placeholder="About you">
+                </div>
+                <div class="input-group">
+                    <label>Favorite Emoji (Avatar)</label>
+                    <input type="text" id="profileEmoji" maxlength="2" placeholder="😊">
+                </div>
+                <div class="input-group">
+                    <label>Security PIN (Required for Multi-Device Sync)</label>
+                    <input type="password" id="profilePin" maxlength="6" placeholder="****** (6 digits)">
+                </div>
+                <button class="btn" id="saveProfileBtn">Save Profile</button>
+            </div>
+        </div>
+
+        <!-- Main App - Chats -->
+        <div class="screen" id="chatsScreen">
+            <div class="app-header">
+                <h2>Chats</h2>
+                <svg class="header-icon" id="searchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </div>
+            <div class="app-content" id="chatsListContainer">
+                <div id="groupsList"></div>
+                <div id="privateChatsList"></div>
+                <div class="empty-state">
+                    <div class="empty-state-icon">💬</div>
+                    <p>No chats yet<br>Add friends to start chatting</p>
+                </div>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item active" data-screen="chats">Chats</div>
+                <div class="nav-item" data-screen="requests">Requests</div>
+                <div class="nav-item" data-screen="calls">Calls</div>
+                <div class="nav-item" data-screen="settings">Settings</div>
+            </div>
+        </div>
+
+        <!-- Chat Window -->
+        <div class="screen" id="chatWindow">
+            <div class="app-header">
+                <span id="backToChats" style="cursor:pointer; font-size:1.5rem;">←</span>
+                <h2 id="chatUserName">Chat</h2>
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <span id="voiceCallBtn" style="cursor:pointer; font-size:1.5rem;">📞</span>
+                    <span id="videoCallBtn" style="cursor:pointer; font-size:1.5rem;">🎥</span>
+                    <span id="blockUserBtn" style="cursor:pointer; font-size:1.5rem; color:#ff4757;"
+                        title="Block User">🚫</span>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="typing-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <button id="selfDestructBtn"
+                    style="background:none; border:none; color:var(--text-color); opacity:0.5; cursor:pointer; font-size:1.2rem;"
+                    title="Self-Destructing Message">⏳</button>
+                <input type="text" class="chat-input" id="messageInput" placeholder="Type a message...">
+                <button class="send-btn" id="sendMessageBtn">➤</button>
+            </div>
+        </div>
+
+        <!-- Requests Screen -->
+        <div class="screen" id="requestsScreen">
+            <div class="app-header">
+                <h2>Friend Requests</h2>
+                <div style="display: flex; gap: 10px;">
+                    <svg class="header-icon" id="createGroupIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" style="cursor:pointer; width: 24px; height: 24px;">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <svg class="header-icon" id="addFriendIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <line x1="19" y1="8" x2="19" y2="14"></line>
+                        <line x1="22" y1="11" x2="16" y2="11"></line>
+                    </svg>
+                </div>
+            </div>
+            <div class="app-content" id="requestsContent">
+                <div
+                    style="padding: 10px; font-weight: 600; font-size: 0.9rem; opacity: 0.7; background: var(--border-color);">
+                    RECEIVED</div>
+                <div id="requestsList"></div>
+                <div
+                    style="padding: 10px; font-weight: 600; font-size: 0.9rem; opacity: 0.7; background: var(--border-color); margin-top: 10px;">
+                    SENT</div>
+                <div id="sentRequestsList"></div>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item" data-screen="chats">Chats</div>
+                <div class="nav-item active" data-screen="requests">Requests</div>
+                <div class="nav-item" data-screen="calls">Calls</div>
+                <div class="nav-item" data-screen="settings">Settings</div>
+            </div>
+        </div>
+
+        <!-- Calls Screen -->
+        <div class="screen" id="callsScreen">
+            <div class="app-header">
+                <h2>Call Logs</h2>
+                <span></span>
+            </div>
+            <div class="app-content" id="callsList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📞</div>
+                    <p>No call history</p>
+                </div>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item" data-screen="chats">Chats</div>
+                <div class="nav-item" data-screen="requests">Requests</div>
+                <div class="nav-item active" data-screen="calls">Calls</div>
+                <div class="nav-item" data-screen="settings">Settings</div>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div class="screen" id="settingsScreen">
+            <div class="app-header">
+                <h2>Settings</h2>
+                <span></span>
+            </div>
+            <div class="app-content">
+                <div class="settings-section" style="text-align:center; padding: 2rem 1rem;">
+                    <div id="settingsAvatar"
+                        style="width: 80px; height: 80px; margin: 0 auto 10px auto; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; background: var(--primary-color);">
+                        😊</div>
+                    <h2 id="settingsName">Your Name</h2>
+                    <p id="settingsBio" style="opacity: 0.7;">Your Bio</p>
+                </div>
+                <div class="settings-section">
+                    <div
+                        style="background: rgba(0, 168, 120, 0.1); padding: 1rem; border-radius: 12px; border: 1px solid var(--primary-color); margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2rem;">🔒</span>
+                        <div style="font-size: 0.9rem;">
+                            <strong>Privacy Shield Active</strong><br>
+                            Your chats are end-to-end secure and rule-protected.
+                        </div>
+                    </div>
+                    <h3>Privacy</h3>
+                    <div class="setting-item">
+                        <div>
+                            <div style="font-weight: 500;">Dark/Light Theme</div>
+                            <div style="font-size: 0.8rem; opacity: 0.6;">Switch between dark and light mode</div>
+                        </div>
+                        <div class="toggle-switch" id="themeToggle"></div>
+                    </div>
+                    <div class="setting-item">
+                        <div>
+                            <div style="font-weight: 500;">Hide Last Seen</div>
+                            <div style="font-size: 0.8rem; opacity: 0.6;">Hide your online status from others</div>
+                        </div>
+                        <div class="toggle-switch" id="hideLastSeenToggle"></div>
+                    </div>
+                    <div class="setting-item">
+                        <div>
+                            <div style="font-weight: 500;">Auto-delete messages</div>
+                            <div style="font-size: 0.8rem; opacity: 0.6;">Delete messages after 10 days</div>
+                        </div>
+                        <div class="toggle-switch" id="autoDeleteToggle"></div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Your Public ID</h3>
+                    <div class="setting-item">
+                        <div>
+                            <div style="font-weight: 500;" id="userPublicId">Loading...</div>
+                            <div style="font-size: 0.8rem; opacity: 0.6;">Share this ID with friends to connect</div>
+                        </div>
+                        <button class="btn" id="copyPublicIdBtn" style="width: auto; padding: 0.5rem 1rem;">📋
+                            Copy</button>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Account</h3>
+                    <button class="btn" id="editProfileBtn">Edit Profile</button>
+                    <button class="btn btn-secondary" id="logoutBtn" style="margin-top: 0.5rem;">Logout</button>
+
+                    <div style="margin-top:2rem;">
+                        <h3 style="font-size:0.9rem; opacity:0.6; margin-bottom:1rem;">BLOCKED USERS</h3>
+                        <div id="blockedUsersList" style="max-height: 200px; overflow-y: auto;">
+                            <!-- Blocked users will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item" data-screen="chats">Chats</div>
+                <div class="nav-item" data-screen="requests">Requests</div>
+                <div class="nav-item" data-screen="calls">Calls</div>
+                <div class="nav-item active" data-screen="settings">Settings</div>
+            </div>
+        </div>
+
+        <!-- Add Friend Modal -->
+        <div class="modal" id="addFriendModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add Friend</h3>
+                    <button class="close-modal" id="closeAddFriend">×</button>
+                </div>
+                <div class="input-group">
+                    <label>Search by Public ID</label>
+                    <input type="text" id="searchFriendInput" placeholder="sk-1234">
+                </div>
+                <button class="btn" id="sendRequestBtn">Send Request</button>
+            </div>
+        </div>
+
+        <!-- Create Group Modal -->
+        <div class="modal" id="createGroupModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create Group</h3>
+                    <button class="close-modal" id="closeCreateGroup">×</button>
+                </div>
+                <div class="input-group">
+                    <label>Group Name</label>
+                    <input type="text" id="groupNameInput" placeholder="Best Friends">
+                </div>
+                <div class="input-group">
+                    <label>Friends to Add</label>
+                    <div id="friendsSelectionList" style="max-height: 200px; overflow-y: auto;">
+                        <!-- Friends will be loaded here -->
+                    </div>
+                </div>
+                <button class="btn" id="confirmCreateGroupBtn">Create Group</button>
+            </div>
+        </div>
+        <div class="call-screen" id="callScreen">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <video id="localVideo" autoplay playsinline muted></video>
+            <div class="call-avatar" id="callAvatar">😊</div>
+            <div class="call-info">
+                <h2 id="callUserName">User</h2>
+                <p class="call-status" id="callStatus">Calling...</p>
+            </div>
+            <div class="call-controls">
+                <button class="call-btn mute" id="muteBtn">🎤</button>
+                <button class="call-btn end" id="endCallBtn">📞</button>
+            </div>
+        </div>
+
+        <!-- Unlock Vault Screen -->
+        <div class="screen auth-screen" id="unlockVaultScreen">
+            <div class="auth-box">
+                <h1>Conversations Locked</h1>
+                <p>Enter your Security PIN to sync your messages to this device.</p>
+                <div class="error-msg" id="unlockError"></div>
+                <div class="input-group">
+                    <label>Security PIN</label>
+                    <input type="password" id="unlockPin" placeholder="******">
+                </div>
+                <button class="btn" id="unlockVaultBtn">Unlock Conversations</button>
+            </div>
+        </div>
+
+        <!-- Custom Popups -->
+        <div id="customPopup" class="custom-popup">
+            <div class="popup-content">
+                <span class="popup-icon" id="popupIcon">🔔</span>
+                <div class="popup-title" id="popupTitle">Notification</div>
+                <div class="popup-message" id="popupMessage">Message content here.</div>
+                <div class="popup-btns">
+                    <button class="btn btn-secondary" id="popupCancelBtn" style="display:none;">Cancel</button>
+                    <button class="btn" id="popupConfirmBtn">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+        import { getDatabase, ref, set, get, onValue, push, update, remove, onDisconnect, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js';
+
+        // ⚠️ REPLACE WITH YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+  apiKey: "AIzaSyDDVtP8E7KVr5w15GeKCVKTcwAB--nspco",
+  authDomain: "circle-20122.firebaseapp.com",
+  databaseURL: "https://circle-20122-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "circle-20122",
+  storageBucket: "circle-20122.firebasestorage.app",
+  messagingSenderId: "131779082255",
+  appId: "1:131779082255:web:94e048b6955da350860b7a"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+        let currentChatId = null;
+        let currentChatUser = null;
+        let typingTimeout = null;
+        let isGroupChat = false;
+        let isSelfDestructEnabled = false;
+        let hideLastSeen = false;
+        let autoDeleteEnabled = false;
+        const globalListeners = new Map();
+        const chatListeners = new Map();
+
+        // Custom Popup System
+        const popupUI = {
+            el: document.getElementById('customPopup'),
+            icon: document.getElementById('popupIcon'),
+            title: document.getElementById('popupTitle'),
+            message: document.getElementById('popupMessage'),
+            cancelBtn: document.getElementById('popupCancelBtn'),
+            confirmBtn: document.getElementById('popupConfirmBtn'),
+            resolve: null,
+
+            show(msg, type = 'alert', title = 'ApnaChat', icon = '🔔') {
+                this.message.textContent = msg;
+                this.title.textContent = title;
+                this.icon.textContent = icon;
+                this.cancelBtn.style.display = type === 'confirm' ? 'block' : 'none';
+                this.el.classList.add('active');
+
+                return new Promise((res) => {
+                    this.resolve = res;
+                });
+            },
+
+            hide(val) {
+                this.el.classList.remove('active');
+                if (this.resolve) this.resolve(val);
+                this.resolve = null;
+            }
+        };
+
+        popupUI.confirmBtn.onclick = () => popupUI.hide(true);
+        popupUI.cancelBtn.onclick = () => popupUI.hide(false);
+
+        // Global Overrides
+        window.alert = (msg) => popupUI.show(msg, 'alert', 'Notification', '🔔');
+        window.confirm = (msg) => popupUI.show(msg, 'confirm', 'Confirm Action', '❓');
+
+        // UI Elements
+        const screens = {
+            login: document.getElementById('loginScreen'),
+            signup: document.getElementById('signupScreen'),
+            chats: document.getElementById('chatsScreen'),
+            chatWindow: document.getElementById('chatWindow'),
+            requests: document.getElementById('requestsScreen'),
+            calls: document.getElementById('callsScreen'),
+            settings: document.getElementById('settingsScreen'),
+            unlockVault: document.getElementById('unlockVaultScreen'),
+            blockedList: document.getElementById('blockedUsersList')
+        };
+
+        // Helper Functions
+        function showScreen(screenName) {
+            Object.values(screens).forEach(screen => screen.classList.remove('active'));
+            screens[screenName].classList.add('active');
+        }
+
+        function showError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            setTimeout(() => errorEl.classList.remove('show'), 5000);
+        }
+
+        function generatePublicId() {
+            return 'sk-' + Math.floor(1000 + Math.random() * 9000);
+        }
+
+        // --- VAULT & CRYPTO SYNC LOGIC ---
+
+        async function deriveVaultKey(pin, salt) {
+            const encoder = new TextEncoder();
+            const passwordKey = await window.crypto.subtle.importKey(
+                "raw", encoder.encode(pin), { name: "PBKDF2" }, false, ["deriveKey"]
+            );
+            return window.crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: encoder.encode(salt), iterations: 100000, hash: "SHA-256" },
+                passwordKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+            );
+        }
+
+        async function backupKeysToFirebase(keys, pin) {
+            const salt = currentUser.uid.substring(0, 8);
+            const vaultKey = await deriveVaultKey(pin, salt);
+            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+            const encryptedKeys = await window.crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv }, vaultKey, new TextEncoder().encode(JSON.stringify(keys))
+            );
+
+            const vaultData = {
+                v: btoa(String.fromCharCode(...new Uint8Array(encryptedKeys))),
+                i: btoa(String.fromCharCode(...new Uint8Array(iv)))
+            };
+            await set(ref(db, `users/${currentUser.uid}/vault`), vaultData);
+        }
+
+        async function restoreKeysFromFirebase(pin) {
+            try {
+                const snapshot = await get(ref(db, `users/${currentUser.uid}/vault`));
+                if (!snapshot.exists()) return null;
+                const vault = snapshot.val();
+
+                const salt = currentUser.uid.substring(0, 8);
+                const vaultKey = await deriveVaultKey(pin, salt);
+                const iv = Uint8Array.from(atob(vault.i), c => c.charCodeAt(0));
+                const encryptedData = Uint8Array.from(atob(vault.v), c => c.charCodeAt(0));
+
+                const decryptedKeys = await window.crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: iv }, vaultKey, encryptedData
+                );
+                return JSON.parse(new TextDecoder().decode(decryptedKeys));
+            } catch (e) {
+                console.error("Vault unlock failed:", e);
+                return null;
+            }
+        }
+
+        // Crypto Helpers for E2EE (Hybrid RSA + AES-GCM)
+        async function getKeys(forceGenerate = false) {
+            if (!currentUser) return null;
+            const keyName = `apnachat_keys_${currentUser.uid}`;
+            let keys = localStorage.getItem(keyName);
+            if (!keys && forceGenerate) {
+                const keyPair = await window.crypto.subtle.generateKey(
+                    { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
+                    true, ["encrypt", "decrypt"]
+                );
+                const pub = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+                const priv = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+                keys = JSON.stringify({
+                    pub: btoa(String.fromCharCode(...new Uint8Array(pub))),
+                    priv: btoa(String.fromCharCode(...new Uint8Array(priv)))
+                });
+                localStorage.setItem(keyName, keys);
+            }
+            return keys ? JSON.parse(keys) : null;
+        }
+
+        async function encryptText(text, pubKeyB64) {
+            try {
+                // 1. Generate random AES key
+                const aesKey = await window.crypto.subtle.generateKey(
+                    { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]
+                );
+                const iv = window.crypto.getRandomValues(new Uint8Array(12));
+
+                // 2. Encrypt text with AES
+                const encodedText = new TextEncoder().encode(text);
+                const encryptedContent = await window.crypto.subtle.encrypt(
+                    { name: "AES-GCM", iv: iv }, aesKey, encodedText
+                );
+
+                // 3. Encrypt AES key with RSA
+                const exportedAesKey = await window.crypto.subtle.exportKey("raw", aesKey);
+                const pubKeyData = Uint8Array.from(atob(pubKeyB64), c => c.charCodeAt(0));
+                const pubKey = await window.crypto.subtle.importKey(
+                    "spki", pubKeyData, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]
+                );
+                const encryptedAesKey = await window.crypto.subtle.encrypt(
+                    { name: "RSA-OAEP" }, pubKey, exportedAesKey
+                );
+
+                // 4. Combine: RSA_Enc(AES_Key) + IV + AES_Enc(Data)
+                const cryptoPacket = {
+                    k: btoa(String.fromCharCode(...new Uint8Array(encryptedAesKey))),
+                    i: btoa(String.fromCharCode(...new Uint8Array(iv))),
+                    d: btoa(String.fromCharCode(...new Uint8Array(encryptedContent)))
+                };
+                return JSON.stringify(cryptoPacket);
+            } catch (e) {
+                console.error("Encryption failed", e);
+                return text;
+            }
+        }
+
+        async function decryptText(jsonStr, privKeyB64) {
+            try {
+                const cryptoPacket = JSON.parse(jsonStr);
+                const privKeyData = Uint8Array.from(atob(privKeyB64), c => c.charCodeAt(0));
+                const privKey = await window.crypto.subtle.importKey(
+                    "pkcs8", privKeyData, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]
+                );
+
+                // 1. Decrypt AES Key using RSA
+                const encryptedAesKey = Uint8Array.from(atob(cryptoPacket.k), c => c.charCodeAt(0));
+                const aesKeyRaw = await window.crypto.subtle.decrypt(
+                    { name: "RSA-OAEP" }, privKey, encryptedAesKey
+                );
+
+                // 2. Import AES Key
+                const aesKey = await window.crypto.subtle.importKey(
+                    "raw", aesKeyRaw, { name: "AES-GCM" }, false, ["decrypt"]
+                );
+
+                // 3. Decrypt Content using AES
+                const iv = Uint8Array.from(atob(cryptoPacket.i), c => c.charCodeAt(0));
+                const encryptedContent = Uint8Array.from(atob(cryptoPacket.d), c => c.charCodeAt(0));
+                const decryptedData = await window.crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: iv }, aesKey, encryptedContent
+                );
+
+                return new TextDecoder().decode(decryptedData);
+            } catch (e) {
+                console.error("Decryption failure:", e);
+                // Fallback for old messages that might be plain text or old RSA format
+                return "🔒 Encryption mismatch / Old message";
+            }
+        }
+
+        function generateSVGAvatar(emoji) {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="#121212"/><text x="50" y="65" font-size="50" text-anchor="middle" fill="white">${emoji || '😊'}</text></svg>`;
+            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        }
+
+        function getChatId(uid1, uid2) {
+            return [uid1, uid2].sort().join('_');
+        }
+
+        // Auth Event Listeners
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                showError('loginError', error.message);
+            }
+        });
+
+        document.getElementById('signupBtn').addEventListener('click', async () => {
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                document.getElementById('profileModal').classList.add('show');
+            } catch (error) {
+                showError('signupError', error.message);
+            }
+        });
+
+        document.getElementById('showSignupBtn').addEventListener('click', () => {
+            showScreen('signup');
+        });
+
+        document.getElementById('showLoginBtn').addEventListener('click', () => {
+            showScreen('login');
+        });
+
+        document.getElementById('saveProfileBtn').addEventListener('click', async () => {
+            const name = document.getElementById('profileName').value.trim();
+            const bio = document.getElementById('profileBio').value.trim();
+            const emojiEl = document.getElementById('profileEmoji');
+            const emoji = emojiEl ? emojiEl.value.trim() || '😊' : '😊';
+            const pin = document.getElementById('profilePin').value.trim();
+
+            if (!name || pin.length < 4) {
+                await alert('Please enter a name and at least a 4-digit PIN');
+                return;
+            }
+
+            if (!auth.currentUser) {
+                await alert('Not authenticated. Please login again.');
+                return;
+            }
+
+            try {
+                // Check if profile already exists
+                const userRef = ref(db, `users/${auth.currentUser.uid}`);
+                const snapshot = await get(userRef);
+
+                let publicId;
+                if (snapshot.exists() && snapshot.val().publicId) {
+                    // Profile exists - keep existing publicId
+                    publicId = snapshot.val().publicId;
+                } else {
+                    // New profile - generate publicId
+                    publicId = generatePublicId();
+                    await set(ref(db, `publicIds/${publicId}`), auth.currentUser.uid);
+                }
+
+                const avatar = generateSVGAvatar(emoji);
+                const keys = await getKeys(true); // Force generate for new profile
+
+                // Backup keys to vault immediately
+                await backupKeysToFirebase(keys, pin);
+
+                await set(ref(db, `users/${auth.currentUser.uid}`), {
+                    name,
+                    bio,
+                    emoji,
+                    publicId,
+                    avatar,
+                    publicKey: keys.pub,
+                    createdAt: (snapshot.exists() && snapshot.val().createdAt) ? snapshot.val().createdAt : Date.now()
+                });
+
+                document.getElementById('profileModal').classList.remove('show');
+                initApp(); // Run initialization immediately
+                showScreen('chats');
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                await alert('Error saving profile: ' + error.message);
+            }
+        });
+
+        // Initialize App Logic
+        function initApp() {
+            if (!currentUser) return;
+            console.log("Initializing App for:", currentUser.uid);
+            setupPresence();
+            loadContacts();
+            loadSettings();
+            loadBlockedUsers();
+            listenForIncomingCalls();
+            setupCallCleanup();
+            cleanupOldMessages();
+        }
+
+        async function cleanupOldMessages() {
+            try {
+                const autoDeleteSnap = await get(ref(db, `users/${currentUser.uid}/autoDelete`));
+                if (!autoDeleteSnap.exists() || !autoDeleteSnap.val()) return;
+
+                const tenDaysAgo = Date.now() - (10 * 24 * 60 * 60 * 1000);
+
+                // We only cleanup private messages for now as group policy might differ
+                const contactsSnap = await get(ref(db, `contacts/${currentUser.uid}`));
+                if (contactsSnap.exists()) {
+                    for (const friendId of Object.keys(contactsSnap.val())) {
+                        const chatId = getChatId(currentUser.uid, friendId);
+                        const msgsSnap = await get(ref(db, `messages/${chatId}`));
+                        if (msgsSnap.exists()) {
+                            const updates = {};
+                            Object.entries(msgsSnap.val()).forEach(([msgId, msg]) => {
+                                if (msg.timestamp < tenDaysAgo) {
+                                    updates[`messages/${chatId}/${msgId}`] = null;
+                                }
+                            });
+                            if (Object.keys(updates).length > 0) {
+                                await update(ref(db), updates);
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log("Cleanup failed:", e);
+            }
+        }
+
+        function setupCallCleanup() {
+            // Optional: Add logic to clean up abandoned call records
+            console.log("Call cleanup initialized");
+        }
+
+        // Auth State Observer
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const userRef = ref(db, `users/${user.uid}`);
+                const snapshot = await get(userRef);
+
+                if (!snapshot.exists()) {
+                    document.getElementById('profileModal').classList.add('show');
+                } else {
+                    // Check if keys exist locally
+                    const keyName = `apnachat_keys_${user.uid}`;
+                    if (localStorage.getItem(keyName)) {
+                        showScreen('chats');
+                        initApp();
+                    } else {
+                        // Keys missing - prompt for Unlock
+                        showScreen('unlockVault');
+                    }
+                }
+            } else {
+                currentUser = null;
+                showScreen('login');
+            }
+        });
+
+        document.getElementById('unlockVaultBtn').addEventListener('click', async () => {
+            const pin = document.getElementById('unlockPin').value;
+            if (!pin) return;
+
+            const keys = await restoreKeysFromFirebase(pin);
+            if (keys) {
+                localStorage.setItem(`apnachat_keys_${currentUser.uid}`, JSON.stringify(keys));
+                showScreen('chats');
+                initApp();
+            } else {
+                showError('unlockError', 'Incorrect PIN or sync failure.');
+            }
+        });
+
+        // Presence System
+        function setupPresence() {
+            const presenceRef = ref(db, `status/${currentUser.uid}`);
+            const connectedRef = ref(db, '.info/connected');
+
+            onValue(connectedRef, async (snapshot) => {
+                if (snapshot.val() === true) {
+                    if (hideLastSeen) {
+                        await remove(presenceRef);
+                        return;
+                    }
+
+                    onDisconnect(presenceRef).set({
+                        state: 'offline',
+                        lastSeen: serverTimestamp()
+                    });
+
+                    set(presenceRef, {
+                        state: 'online',
+                        lastSeen: serverTimestamp()
+                    });
+                }
+            });
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const screenName = item.dataset.screen;
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                showScreen(screenName);
+                if (screenName === 'calls') loadCallLogs();
+            });
+        });
+
+        // Load Contacts & Groups
+        function loadContacts() {
+            const groupsList = document.getElementById('groupsList');
+            const privateList = document.getElementById('privateChatsList');
+            groupsList.innerHTML = '';
+            privateList.innerHTML = '';
+
+            let hasAnyChat = false;
+
+            const checkEmpty = () => {
+                const container = document.getElementById('chatsListContainer');
+                const hasAnyChat = (groupsList.children.length > 0 || privateList.children.length > 0);
+
+                if (!hasAnyChat) {
+                    if (!container.querySelector('.empty-state')) {
+                        const empty = document.createElement('div');
+                        empty.className = 'empty-state';
+                        empty.innerHTML = '<div class="empty-state-icon">💬</div><p>No chats yet<br>Add friends to start chatting</p>';
+                        container.appendChild(empty);
+                    }
+                } else {
+                    const empty = container.querySelector('.empty-state');
+                    if (empty) empty.remove();
+                }
+            };
+
+            // Clear old global listeners
+            globalListeners.forEach(unsubscribe => unsubscribe());
+            globalListeners.clear();
+
+            // Listen for Groups
+            const groupsUnsub = onValue(ref(db, `groups`), (groupsSnap) => {
+                groupsList.innerHTML = '';
+                if (groupsSnap.exists()) {
+                    Object.entries(groupsSnap.val()).forEach(([groupId, groupData]) => {
+                        if (groupData.members && groupData.members[currentUser.uid]) {
+                            addChatToUI(groupId, groupData, true);
+                        }
+                    });
+                }
+                checkEmpty();
+            });
+            globalListeners.set('groups_list', groupsUnsub);
+
+            // Listen for Private Contacts
+            const contactsRef = ref(db, `contacts/${currentUser.uid}`);
+            const contactsUnsub = onValue(contactsRef, async (snapshot) => {
+                privateList.innerHTML = '';
+                if (snapshot.exists()) {
+                    for (const [friendId, data] of Object.entries(snapshot.val())) {
+                        const friendData = await get(ref(db, `users/${friendId}`));
+                        if (friendData.exists()) {
+                            addChatToUI(friendId, friendData.val(), false);
+                        }
+                    }
+                }
+                checkEmpty();
+            });
+            globalListeners.set('contacts_list', contactsUnsub);
+        }
+
+        function addChatToUI(id, data, isGroup) {
+            const list = isGroup ? document.getElementById('groupsList') : document.getElementById('privateChatsList');
+            const chatId = isGroup ? id : getChatId(currentUser.uid, id);
+
+            if (document.getElementById(`chat-${chatId}`)) return;
+
+            const contactDiv = document.createElement('div');
+            contactDiv.className = 'contact-item';
+            contactDiv.id = `chat-${chatId}`;
+
+            const lastMsgPath = isGroup ? `lastMessages/groups/${chatId}` : `lastMessages/${currentUser.uid}/${chatId}`;
+            const lastMsgUnsub = onValue(ref(db, lastMsgPath), async (snap) => {
+                const previewEl = document.getElementById(`preview-${chatId}`);
+                if (previewEl) {
+                    if (snap.exists()) {
+                        let text = snap.val().text;
+                        if (snap.val().isEncrypted) {
+                            const keys = await getKeys();
+                            if (keys) {
+                                if (snap.val().sender === currentUser.uid && snap.val().senderText) {
+                                    text = await decryptText(snap.val().senderText, keys.priv);
+                                } else {
+                                    text = await decryptText(snap.val().text, keys.priv);
+                                }
+                            } else {
+                                text = "🔒 Unlock to view";
+                            }
+                        }
+                        previewEl.textContent = (isGroup ? (snap.val().senderName + ': ') : '') + text;
+                    } else {
+                        previewEl.textContent = "Tap to chat";
+                    }
+                }
+            });
+            globalListeners.set(`lastMsg_${chatId}`, lastMsgUnsub);
+
+            contactDiv.innerHTML = `
+                <div class="contact-avatar">${isGroup ? '👥' : (data.emoji || '😊')}</div>
+                <div class="contact-info">
+                  <div class="contact-name">
+                    ${isGroup ? data.name : (data.name || 'Unknown')}
+                    ${!isGroup ? `<span class="online-indicator" style="display:none;" id="status-${id}"></span>` : ''}
+                  </div>
+                  <div class="contact-preview" id="preview-${chatId}">Tap to chat</div>
+                </div>
+                <div class="unread-badge" style="display:none;" id="unread-${chatId}">0</div>
+            `;
+
+            contactDiv.addEventListener('click', () => openChat(id, data, isGroup));
+            list.appendChild(contactDiv);
+
+            if (!isGroup) {
+                const statusUnsub = onValue(ref(db, `status/${id}`), (statusSnap) => {
+                    const statusIndicator = document.getElementById(`status-${id}`);
+                    if (statusIndicator) {
+                        statusIndicator.style.display = (statusSnap.exists() && statusSnap.val().state === 'online') ? 'inline-block' : 'none';
+                    }
+                });
+                globalListeners.set(`status_${id}`, statusUnsub);
+            }
+
+            const unreadUnsub = onValue(ref(db, `unread/${currentUser.uid}/${chatId}`), (unreadSnap) => {
+                const unreadBadge = document.getElementById(`unread-${chatId}`);
+                if (unreadBadge) {
+                    if (unreadSnap.exists() && unreadSnap.val() > 0) {
+                        unreadBadge.textContent = unreadSnap.val();
+                        unreadBadge.style.display = 'flex';
+                    } else {
+                        unreadBadge.style.display = 'none';
+                    }
+                }
+            });
+            globalListeners.set(`unread_${chatId}`, unreadUnsub);
+
+            // Addition for Delete Chat
+            const deleteChatBtn = document.createElement('div');
+            deleteChatBtn.innerHTML = '🗑️';
+            deleteChatBtn.className = 'delete-chat-btn';
+            deleteChatBtn.title = 'Delete Chat';
+            deleteChatBtn.onclick = async (e) => {
+                e.stopPropagation();
+                if (await confirm(`Delete chat with ${isGroup ? data.name : (data.name || 'this user')}?`)) {
+                    deleteChat(id, isGroup);
+                }
+            };
+            contactDiv.appendChild(deleteChatBtn);
+        }
+
+        async function deleteChat(id, isGroup) {
+            const chatId = isGroup ? id : getChatId(currentUser.uid, id);
+            try {
+                if (isGroup) {
+                    // Remove from members locally
+                    await remove(ref(db, `groups/${id}/members/${currentUser.uid}`));
+                } else {
+                    // Delete message history and last message for both (Privacy First)
+                    // We don't remove from 'contacts' to keep the friend connection
+                    if (await confirm("This will clear the message history for everyone in this chat. Continue?")) {
+                        await remove(ref(db, `messages/${chatId}`));
+                        await remove(ref(db, `unread/${currentUser.uid}/${chatId}`));
+                        await remove(ref(db, `lastMessages/${currentUser.uid}/${chatId}`));
+                        await remove(ref(db, `lastMessages/${id}/${chatId}`));
+                        await remove(ref(db, `reactions/${chatId}`));
+                    }
+                }
+                loadContacts(); // Refresh list
+            } catch (e) {
+                await alert('Error deleting chat: ' + e.message);
+            }
+        }
+
+        // Open Chat
+        async function openChat(id, data, isGroup = false) {
+            try {
+                // Strict Permission Check: Only open if contact is accepted
+                if (!isGroup) {
+                    const contactSnap = await get(ref(db, `contacts/${currentUser.uid}/${id}`));
+                    if (!contactSnap.exists()) {
+                        await alert("⚠️ Permission Denied: You must accept the friend request first.");
+                        return;
+                    }
+                    const blockSnap = await get(ref(db, `blocks/${id}/${currentUser.uid}`));
+                    if (blockSnap.exists()) {
+                        await alert("⚠️ Cannot open chat. This user has blocked you.");
+                        return;
+                    }
+                    const myBlockSnap = await get(ref(db, `blocks/${currentUser.uid}/${id}`));
+                    if (myBlockSnap.exists()) {
+                        await alert("⚠️ This user is blocked by you. Unblock them from Settings to chat.");
+                        return;
+                    }
+                }
+
+                currentChatId = isGroup ? id : getChatId(currentUser.uid, id);
+                isGroupChat = isGroup;
+                currentChatUser = isGroup ? null : id;
+
+                document.getElementById('chatUserName').textContent = isGroup ? data.name : (data.name || 'User');
+                showScreen('chatWindow');
+
+                // Hide calling buttons for groups
+                document.getElementById('voiceCallBtn').style.display = isGroup ? 'none' : 'block';
+                document.getElementById('videoCallBtn').style.display = isGroup ? 'none' : 'block';
+
+                // Clear unread
+                set(ref(db, `unread/${currentUser.uid}/${currentChatId}`), 0);
+
+                loadMessages();
+                if (!isGroup) listenForTyping();
+            } catch (err) {
+                console.error("Open chat error:", err);
+                await alert("Error opening chat: " + err.message);
+            }
+        }
+
+        document.getElementById('backToChats').addEventListener('click', () => {
+            currentChatId = null;
+            currentChatUser = null;
+            showScreen('chats');
+        });
+
+        let openPickerId = null;
+
+        // Load Messages
+        async function loadMessages() {
+            chatListeners.forEach(u => u());
+            chatListeners.clear();
+
+            const path = isGroupChat ? `groupMessages/${currentChatId}` : `messages/${currentChatId}`;
+            const messagesRef = ref(db, path);
+            const myKeys = await getKeys();
+
+            const msgUnsub = onValue(messagesRef, async (snapshot) => {
+                const messagesContainer = document.getElementById('chatMessages');
+                const typingIndicator = document.getElementById('typingIndicator');
+
+                const isAtBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop <= messagesContainer.clientHeight + 100;
+
+                messagesContainer.innerHTML = '';
+                messagesContainer.appendChild(typingIndicator);
+
+                if (snapshot.exists()) {
+                    const messages = Object.entries(snapshot.val());
+                    for (const [msgId, msg] of messages) {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = `message ${msg.sender === currentUser.uid ? 'me' : 'them'}`;
+                        const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                        let displayVal = msg.text;
+                        if (msg.isEncrypted) {
+                            if (myKeys) {
+                                try {
+                                    if (msg.sender !== currentUser.uid) {
+                                        displayVal = await decryptText(msg.text, myKeys.priv);
+                                    } else {
+                                        displayVal = msg.senderText ? await decryptText(msg.senderText, myKeys.priv) : "🔒 [Keys pending]";
+                                    }
+                                } catch (e) {
+                                    displayVal = "🔒 Decryption error";
+                                }
+                            } else {
+                                displayVal = "🔒 Unlock conversations to view";
+                            }
+                        }
+
+                        let senderInfo = '';
+                        if (isGroupChat && msg.sender !== currentUser.uid) {
+                            senderInfo = `<div style="font-size:0.75rem; color:var(--primary-color); font-weight:600; margin-bottom:2px;">${msg.senderName || 'User'}</div>`;
+                        }
+
+                        messageDiv.innerHTML = `
+                            ${senderInfo}
+                            <span class="msg-text">${msg.isSelfDestruct ? '⏳ View Once Message' : displayVal}</span>
+                            <div class="message-time">${time}</div>
+                            <div class="reaction-badge" style="display:none;" id="reactions-${msgId}"></div>
+                            <div class="reaction-picker" id="picker-${msgId}">
+                                <span class="reaction-item">❤️</span>
+                                <span class="reaction-item">👍</span>
+                                <span class="reaction-item">😂</span>
+                                <span class="reaction-item">😮</span>
+                            </div>
+                        `;
+
+                        if (msg.isSelfDestruct) {
+                            const deletePath = isGroupChat ? `groupMessages/${currentChatId}/${msgId}` : `messages/${currentChatId}/${msgId}`;
+                            messageDiv.addEventListener('click', async (e) => {
+                                if (messageDiv.classList.contains('viewed') || msg.sender === currentUser.uid) return;
+                                try {
+                                    const val = msg.isEncrypted ? await decryptText(msg.text, myKeys.priv) : msg.text;
+                                    messageDiv.querySelector('.msg-text').textContent = val;
+                                    messageDiv.classList.add('viewed');
+                                    setTimeout(() => {
+                                        remove(ref(db, deletePath));
+                                        remove(ref(db, `reactions/${currentChatId}/${msgId}`)); // Cleanup reactions too
+                                    }, 10000);
+                                } catch (err) {
+                                    messageDiv.querySelector('.msg-text').textContent = "🔒 [Decryption failed]";
+                                }
+                                e.stopPropagation();
+                            }, { once: true });
+                        }
+
+                        if (openPickerId === msgId) {
+                            messageDiv.querySelector('.reaction-picker').classList.add('active');
+                        }
+
+                        messageDiv.addEventListener('click', (e) => {
+                            const picker = document.getElementById(`picker-${msgId}`);
+                            const isActive = picker.classList.contains('active');
+                            document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('active'));
+                            if (!isActive) {
+                                picker.classList.add('active');
+                                openPickerId = msgId;
+                            } else {
+                                openPickerId = null;
+                            }
+                            e.stopPropagation();
+                        });
+
+                        messageDiv.querySelectorAll('.reaction-item').forEach(item => {
+                            item.addEventListener('click', (e) => {
+                                set(ref(db, `reactions/${currentChatId}/${msgId}/${currentUser.uid}`), item.textContent);
+                                document.getElementById(`picker-${msgId}`).classList.remove('active');
+                                e.stopPropagation();
+                            });
+                        });
+
+                        messagesContainer.appendChild(messageDiv);
+                    }
+
+                    // Single reactions listener for the whole chat
+                    const reactUnsub = onValue(ref(db, `reactions/${currentChatId}`), (rSnap) => {
+                        if (rSnap.exists()) {
+                            Object.entries(rSnap.val()).forEach(([mId, reactions]) => {
+                                const badge = document.getElementById(`reactions-${mId}`);
+                                if (badge) {
+                                    const counts = {};
+                                    Object.values(reactions).forEach(emoji => counts[emoji] = (counts[emoji] || 0) + 1);
+                                    badge.innerHTML = Object.entries(counts).map(([e, c]) => `${e}${c > 1 ? c : ''}`).join(' ');
+                                    badge.style.display = 'flex';
+                                }
+                            });
+                        }
+                    });
+                    chatListeners.set('reactions', reactUnsub);
+
+                    if (isAtBottom) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            });
+            chatListeners.set('messages', msgUnsub);
+        }
+
+        // Send Message
+        document.getElementById('sendMessageBtn').addEventListener('click', sendMessage);
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        async function sendMessage() {
+            try {
+                const input = document.getElementById('messageInput');
+                let text = input.value.trim();
+
+                if (!text || !currentChatId) return;
+
+                text = text.replace(/<[^>]*>?/gm, '');
+
+                let encryptedText = text;
+                let senderEncryptedText = null;
+                const keys = await getKeys();
+
+                if (!isGroupChat) {
+                    // Check if I am blocked by the recipient before sending
+                    const recipientBlockSnap = await get(ref(db, `blocks/${currentChatUser}/${currentUser.uid}`));
+                    if (recipientBlockSnap.exists()) {
+                        await alert("Message not sent. You are blocked by this user.");
+                        return;
+                    }
+
+                    const recipientSnap = await get(ref(db, `users/${currentChatUser}`));
+                    if (recipientSnap.exists() && recipientSnap.val().publicKey) {
+                        try {
+                            encryptedText = await encryptText(text, recipientSnap.val().publicKey);
+                            // Also encrypt for me so I can read it
+                            senderEncryptedText = await encryptText(text, keys.pub);
+                        } catch (encryptError) {
+                            console.error("Encryption failed:", encryptError);
+                            // Fallback to plain if keys are somehow corrupted, but this shouldn't happen with E2EE forced.
+                            // For now, if E2EE fails, we block sending to ensure privacy.
+                            await alert("Encryption failed. Please contact support.");
+                            return;
+                        }
+                    }
+                }
+
+                const path = isGroupChat ? `groupMessages/${currentChatId}` : `messages/${currentChatId}`;
+                const messageRef = push(ref(db, path));
+
+                const userDataSnap = await get(ref(db, `users/${currentUser.uid}`));
+                const senderName = userDataSnap.exists() ? userDataSnap.val().name : 'User';
+
+                await set(messageRef, {
+                    sender: currentUser.uid,
+                    recipientId: isGroupChat ? null : currentChatUser, // Store for rule validation
+                    senderName: senderName,
+                    text: encryptedText,
+                    senderText: senderEncryptedText,
+                    isEncrypted: !isGroupChat,
+                    isSelfDestruct: isSelfDestructEnabled,
+                    timestamp: Date.now(),
+                    type: 'text'
+                });
+
+                if (isSelfDestructEnabled) {
+                    isSelfDestructEnabled = false;
+                    document.getElementById('selfDestructBtn').style.opacity = '0.5';
+                }
+
+                // Update unread and last message
+                const lastMsgData = {
+                    text: encryptedText, // Use encrypted for recipient
+                    senderText: senderEncryptedText, // Use encrypted for sender
+                    isEncrypted: !isGroupChat,
+                    timestamp: Date.now(),
+                    sender: currentUser.uid,
+                    senderName: senderName
+                };
+
+                if (isGroupChat) {
+                    // Update for all group members
+                    const groupSnap = await get(ref(db, `groups/${currentChatId}`));
+                    if (groupSnap.exists()) {
+                        const members = Object.keys(groupSnap.val().members);
+                        for (const memberId of members) {
+                            if (memberId !== currentUser.uid) {
+                                await update(ref(db), { [`unread/${memberId}/${currentChatId}`]: increment(1) });
+                            }
+                        }
+                    }
+                    await set(ref(db, `lastMessages/groups/${currentChatId}`), lastMsgData);
+                } else {
+                    // Update for other user
+                    await update(ref(db), { [`unread/${currentChatUser}/${currentChatId}`]: increment(1) });
+
+                    await set(ref(db, `lastMessages/${currentUser.uid}/${currentChatId}`), lastMsgData);
+                    await set(ref(db, `lastMessages/${currentChatUser}/${currentChatId}`), lastMsgData);
+                }
+
+                // Clear typing indicator
+                if (!isGroupChat) {
+                    await set(ref(db, `typing/${currentChatId}/${currentUser.uid}`), null);
+                }
+
+                input.value = '';
+            } catch (err) {
+                console.error("Send message error:", err);
+                await alert("Failed to send message: " + err.message);
+            }
+        }
+
+        // Typing Indicator
+        document.getElementById('messageInput').addEventListener('input', () => {
+            if (!currentChatId) return;
+
+            console.log('Sending typing status: true');
+            set(ref(db, `typing/${currentChatId}/${currentUser.uid}`), true);
+
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                console.log('Sending typing status: null (timeout)');
+                set(ref(db, `typing/${currentChatId}/${currentUser.uid}`), null);
+            }, 3000);
+        });
+
+        function listenForTyping() {
+            const unsub = onValue(ref(db, `typing/${currentChatId}/${currentChatUser}`), (snapshot) => {
+                const typingIndicator = document.getElementById('typingIndicator');
+                const isTyping = snapshot.exists() && snapshot.val() === true;
+                if (isTyping) {
+                    typingIndicator.classList.add('show');
+                } else {
+                    typingIndicator.classList.remove('show');
+                }
+            });
+            chatListeners.set('typing', unsub);
+        }
+
+        // Friend Requests
+        document.getElementById('addFriendIcon').addEventListener('click', () => {
+            document.getElementById('addFriendModal').classList.add('show');
+        });
+
+        document.getElementById('closeAddFriend').addEventListener('click', () => {
+            document.getElementById('addFriendModal').classList.remove('show');
+        });
+
+        document.getElementById('sendRequestBtn').addEventListener('click', async () => {
+            const publicId = document.getElementById('searchFriendInput').value.trim();
+
+            if (!publicId) {
+                await alert('Please enter a public ID');
+                return;
+            }
+
+            const uidSnap = await get(ref(db, `publicIds/${publicId}`));
+            if (!uidSnap.exists()) {
+                await alert('User not found');
+                return;
+            }
+
+            const targetUid = uidSnap.val();
+            if (targetUid === currentUser.uid) {
+                await alert('Cannot add yourself');
+                return;
+            }
+
+            try {
+                await set(ref(db, `requests/${targetUid}/${currentUser.uid}`), {
+                    timestamp: serverTimestamp(),
+                    senderName: document.getElementById('settingsName').textContent || 'Someone'
+                });
+                // Track sent request
+                await set(ref(db, `sentRequests/${currentUser.uid}/${targetUid}`), {
+                    status: 'pending',
+                    timestamp: serverTimestamp()
+                });
+                await alert('Friend request sent to ' + publicId);
+            } catch (err) {
+                console.error("Set request error:", err);
+                await alert('Failed to send request: ' + err.message);
+            }
+
+            document.getElementById('addFriendModal').classList.remove('show');
+            document.getElementById('searchFriendInput').value = '';
+        });
+
+        // Load Friend Requests
+        onAuthStateChanged(auth, (user) => {
+            if (!user) return;
+
+            const requestsList = document.getElementById('requestsList');
+            const sentList = document.getElementById('sentRequestsList');
+
+            onValue(ref(db, `requests/${user.uid}`), async (snapshot) => {
+                requestsList.innerHTML = '';
+
+                if (!snapshot.exists()) {
+                    requestsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><p>No friend requests</p></div>';
+                    return;
+                }
+
+                for (const [senderId, data] of Object.entries(snapshot.val())) {
+                    const senderData = await get(ref(db, `users/${senderId}`));
+                    if (senderData.exists()) {
+                        const sender = senderData.val();
+                        const requestDiv = document.createElement('div');
+                        requestDiv.className = 'contact-item';
+                        requestDiv.innerHTML = `
+          <div class="contact-avatar">${sender.emoji}</div>
+          <div class="contact-info">
+            <div class="contact-name">${sender.name}</div>
+            <div class="contact-preview">${sender.bio || 'Wants to connect'}</div>
+          </div>
+        `;
+
+                        const acceptBtn = document.createElement('button');
+                        acceptBtn.className = 'btn';
+                        acceptBtn.textContent = 'Accept';
+                        acceptBtn.style.width = 'auto';
+                        acceptBtn.style.padding = '0.5rem 1rem';
+                        acceptBtn.addEventListener('click', async () => {
+                            // Add to contacts
+                            await set(ref(db, `contacts/${user.uid}/${senderId}`), true);
+                            await set(ref(db, `contacts/${senderId}/${user.uid}`), true);
+                            // Update sender's sentRequest status
+                            await update(ref(db, `sentRequests/${senderId}/${user.uid}`), { status: 'accepted' });
+                            // Remove request
+                            await remove(ref(db, `requests/${user.uid}/${senderId}`));
+                        });
+
+                        requestDiv.appendChild(acceptBtn);
+                        requestsList.appendChild(requestDiv);
+                    }
+                }
+            });
+
+            // Listen for Sent Requests
+            onValue(ref(db, `sentRequests/${user.uid}`), async (snapshot) => {
+                sentList.innerHTML = '';
+                if (!snapshot.exists()) {
+                    sentList.innerHTML = '<div class="empty-state"><p style="font-size:0.8rem;">No sent requests</p></div>';
+                    return;
+                }
+
+                for (const [targetId, data] of Object.entries(snapshot.val())) {
+                    const targetSnap = await get(ref(db, `users/${targetId}`));
+                    if (targetSnap.exists()) {
+                        const target = targetSnap.val();
+                        const div = document.createElement('div');
+                        div.className = 'contact-item';
+                        const statusColor = data.status === 'accepted' ? '#00A878' : '#666';
+                        div.innerHTML = `
+                            <div class="contact-avatar">${target.emoji || '👤'}</div>
+                            <div class="contact-info">
+                                <div class="contact-name">${target.name}</div>
+                                <div class="contact-preview" style="color:${statusColor}">${data.status.toUpperCase()}</div>
+                            </div>
+                        `;
+                        // Option to clear accepted requests
+                        if (data.status === 'accepted') {
+                            const clearBtn = document.createElement('span');
+                            clearBtn.innerHTML = ' 🗑️';
+                            clearBtn.style.cursor = 'pointer';
+                            clearBtn.style.padding = '10px';
+                            clearBtn.title = 'Clear Status';
+                            clearBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                remove(ref(db, `sentRequests/${user.uid}/${targetId}`));
+                            });
+                            div.appendChild(clearBtn);
+                        }
+                        sentList.appendChild(div);
+                    }
+                }
+            });
+        });
+
+        // Settings
+        function loadSettings() {
+            // Load auto-delete setting
+            onValue(ref(db, `users/${currentUser.uid}/autoDelete`), (snapshot) => {
+                autoDeleteEnabled = snapshot.exists() ? snapshot.val() : false;
+                const toggle = document.getElementById('autoDeleteToggle');
+                if (autoDeleteEnabled) {
+                    toggle.classList.add('active');
+                } else {
+                    toggle.classList.remove('active');
+                }
+            });
+
+            // Load and display public ID
+            get(ref(db, `users/${currentUser.uid}/publicId`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    document.getElementById('userPublicId').textContent = snapshot.val();
+                }
+            });
+
+            // Load Profile Data for Settings Header
+            get(ref(db, `users/${currentUser.uid}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    document.getElementById('settingsName').textContent = data.name || 'User';
+                    document.getElementById('settingsBio').textContent = data.bio || 'No bio';
+                    document.getElementById('settingsAvatar').textContent = data.emoji || '😊';
+                }
+            });
+        }
+
+        document.getElementById('autoDeleteToggle').addEventListener('click', async function () {
+            autoDeleteEnabled = !autoDeleteEnabled;
+            await set(ref(db, `users/${currentUser.uid}/autoDelete`), autoDeleteEnabled);
+            this.classList.toggle('active');
+        });
+
+        // Block/Unblock Logic
+        async function loadBlockedUsers() {
+            const list = document.getElementById('blockedUsersList');
+            if (!list) return;
+
+            onValue(ref(db, `blocks/${currentUser.uid}`), async (snapshot) => {
+                list.innerHTML = '';
+                if (!snapshot.exists()) {
+                    list.innerHTML = '<p style="font-size:0.8rem; opacity:0.5; padding:10px;">No blocked users</p>';
+                    return;
+                }
+
+                for (const blockedId of Object.keys(snapshot.val())) {
+                    const userSnap = await get(ref(db, `users/${blockedId}`));
+                    if (userSnap.exists()) {
+                        const userData = userSnap.val();
+                        const div = document.createElement('div');
+                        div.className = 'contact-item';
+                        div.style.padding = '10px';
+                        div.innerHTML = `
+                            <div class="contact-avatar" style="width:35px; height:35px; font-size:0.9rem;">${userData.emoji || '👤'}</div>
+                            <div class="contact-info">
+                                <div class="contact-name" style="font-size:0.9rem;">${userData.name}</div>
+                            </div>
+                            <button class="btn" style="width:auto; padding:5px 10px; font-size:0.75rem;" onclick="unblockUser('${blockedId}')">Unblock</button>
+                        `;
+                        list.appendChild(div);
+                    }
+                }
+            });
+        }
+
+        window.unblockUser = async function (id) {
+            if (await confirm("Unblock this user?")) {
+                try {
+                    await remove(ref(db, `blocks/${currentUser.uid}/${id}`));
+                    await alert("User unblocked");
+                } catch (e) {
+                    await alert("Error: " + e.message);
+                }
+            }
+        };
+
+        document.getElementById('blockUserBtn').addEventListener('click', async () => {
+            if (!currentChatUser || isGroupChat) return;
+            const name = document.getElementById('chatUserName').textContent;
+            if (await confirm(`Block ${name}? They won't be able to message or call you.`)) {
+                try {
+                    await set(ref(db, `blocks/${currentUser.uid}/${currentChatUser}`), true);
+                    await alert(`${name} has been blocked.`);
+                    showScreen('chats');
+                    currentChatId = null;
+                    currentChatUser = null;
+                } catch (e) {
+                    await alert("Error blocking user: " + e.message);
+                }
+            }
+        });
+
+        document.getElementById('editProfileBtn').addEventListener('click', () => {
+            // Show profile edit modal (reuse profile setup modal)
+            get(ref(db, `users/${currentUser.uid}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    document.getElementById('profileName').value = data.name || '';
+                    document.getElementById('profileBio').value = data.bio || '';
+                    const emojiEl = document.getElementById('profileEmoji');
+                    if (emojiEl) emojiEl.value = data.emoji || '';
+                    document.getElementById('profileModal').classList.add('show');
+                }
+            });
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            if (await confirm('Are you sure you want to logout?')) {
+                await signOut(auth);
+            }
+        });
+
+        document.getElementById('copyPublicIdBtn').addEventListener('click', async () => {
+            const publicId = document.getElementById('userPublicId').textContent;
+            if (publicId && publicId !== 'Loading...') {
+                try {
+                    await navigator.clipboard.writeText(publicId);
+                    const btn = document.getElementById('copyPublicIdBtn');
+                    btn.innerHTML = '✅ Copied!';
+                    btn.style.background = '#4CAF50';
+                    setTimeout(() => {
+                        btn.innerHTML = '📋 Copy';
+                        btn.style.background = 'var(--primary-color)';
+                    }, 2000);
+                } catch (err) {
+                    await alert('Failed to copy. Your ID is: ' + publicId);
+                }
+            }
+        });
+
+        document.getElementById('themeToggle').addEventListener('click', function () {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            this.classList.toggle('active');
+        });
+
+        // Load theme on startup
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+            if (document.getElementById('themeToggle')) {
+                document.getElementById('themeToggle').classList.add('active');
+            }
+        }
+
+        // Group Logic Listeners
+        document.getElementById('createGroupIcon').addEventListener('click', async () => {
+            const friendsList = document.getElementById('friendsSelectionList');
+            friendsList.innerHTML = 'Loading friends...';
+            document.getElementById('createGroupModal').classList.add('show');
+
+            const contactsRef = ref(db, `contacts/${currentUser.uid}`);
+            const snap = await get(contactsRef);
+            friendsList.innerHTML = '';
+
+            if (snap.exists()) {
+                for (const friendId of Object.keys(snap.val())) {
+                    const friendData = await get(ref(db, `users/${friendId}`));
+                    if (friendData.exists()) {
+                        const div = document.createElement('div');
+                        div.style.padding = '10px';
+                        div.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                        div.innerHTML = `<label style="display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" class="group-friend-check" value="${friendId}" data-name="${friendData.val().name}">
+                            ${friendData.val().emoji} ${friendData.val().name}
+                        </label>`;
+                        friendsList.appendChild(div);
+                    }
+                }
+            } else {
+                friendsList.innerHTML = 'No friends found. Add friends first.';
+            }
+        });
+
+        document.getElementById('closeCreateGroup').addEventListener('click', () => {
+            document.getElementById('createGroupModal').classList.remove('show');
+        });
+
+        document.getElementById('confirmCreateGroupBtn').addEventListener('click', async () => {
+            const name = document.getElementById('groupNameInput').value.trim();
+            const selectedFriends = Array.from(document.querySelectorAll('.group-friend-check:checked')).map(el => ({
+                uid: el.value,
+                name: el.dataset.name
+            }));
+
+            if (!name) return await alert('Enter group name');
+            if (selectedFriends.length === 0) return await alert('Select at least one friend');
+
+            try {
+                const groupId = 'group_' + Date.now();
+                const members = { [currentUser.uid]: true };
+                selectedFriends.forEach(f => members[f.uid] = true);
+
+                const groupData = {
+                    name,
+                    members,
+                    admins: { [currentUser.uid]: true },
+                    createdAt: serverTimestamp()
+                };
+
+                await set(ref(db, `groups/${groupId}`), groupData);
+                document.getElementById('createGroupModal').classList.remove('show');
+                document.getElementById('groupNameInput').value = '';
+                await alert('Group created successfully!');
+                loadContacts();
+            } catch (e) {
+                await alert('Error creating group: ' + e.message);
+            }
+        });
+
+        // Call Buttons
+        document.getElementById('voiceCallBtn').addEventListener('click', () => {
+            if (currentChatUser) initiateCall(currentChatUser, false);
+        });
+
+        document.getElementById('videoCallBtn').addEventListener('click', () => {
+            if (currentChatUser) initiateCall(currentChatUser, true);
+        });
+
+        // WebRTC Configuration
+        const servers = {
+            iceServers: [
+                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
+            ]
+        };
+
+        let localStream = null;
+        let peerConnection = null;
+        let currentCallId = null;
+        let callStartTime = null;
+
+        // Initialize Call
+        async function initiateCall(friendId, isVideo) {
+            // Check if I am blocked or if I have blocked the user
+            const blockSnap = await get(ref(db, `blocks/${friendId}/${currentUser.uid}`));
+            if (blockSnap.exists()) {
+                await alert("Cannot initiate call. You are blocked by this user.");
+                return;
+            }
+            const myBlockSnap = await get(ref(db, `blocks/${currentUser.uid}/${friendId}`));
+            if (myBlockSnap.exists()) {
+                await alert("You have blocked this user. Unblock them to call.");
+                return;
+            }
+
+            currentCallId = generatePublicId();
+            const callDocRef = ref(db, `calls/${currentCallId}`);
+            callStartTime = Date.now();
+
+            // 1. Get Media with constraints
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: isVideo ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false,
+                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+            });
+            document.getElementById('localVideo').srcObject = localStream;
+            document.getElementById('callScreen').classList.add('active');
+            document.getElementById('callStatus').textContent = 'Calling...';
+
+            // 2. Create Peer Connection
+            peerConnection = new RTCPeerConnection(servers);
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            // 3. Handle Events
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    push(ref(db, `calls/${currentCallId}/offerCandidates`), event.candidate.toJSON());
+                }
+            };
+
+            peerConnection.ontrack = event => {
+                document.getElementById('remoteVideo').srcObject = event.streams[0];
+            };
+
+            // 4. Create Offer
+            const offerDescription = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offerDescription);
+
+            const offer = {
+                sdp: offerDescription.sdp,
+                type: offerDescription.type,
+                callerId: currentUser.uid,
+                callerName: document.getElementById('settingsName').textContent,
+                isVideo: isVideo
+            };
+
+            await set(callDocRef, { offer });
+
+            // 5. Notify Receiver
+            await set(ref(db, `incomingCalls/${friendId}`), {
+                callId: currentCallId,
+                callerId: currentUser.uid,
+                callerName: document.getElementById('settingsName').textContent,
+                isVideo: isVideo
+            });
+
+            // Log call attempt
+            logCall(friendId, isVideo, 'outgoing');
+
+            // 6. Listen for Answer
+            let remoteCandidatesQueue = [];
+            onValue(callDocRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!peerConnection || !data) return;
+
+                if (data.answer && !peerConnection.currentRemoteDescription) {
+                    const answerDescription = new RTCSessionDescription(data.answer);
+                    peerConnection.setRemoteDescription(answerDescription).then(() => {
+                        remoteCandidatesQueue.forEach(candidate => {
+                            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                        });
+                        remoteCandidatesQueue = [];
+                    });
+                }
+
+                if (data.rejected) {
+                    alert('Call Rejected').then(() => endCall());
+                }
+            });
+
+            // 7. Listen for Answer Candidates
+            onValue(ref(db, `calls/${currentCallId}/answerCandidates`), (snapshot) => {
+                snapshot.forEach((childSnapshot) => {
+                    const candidate = childSnapshot.val();
+                    if (peerConnection.currentRemoteDescription) {
+                        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    } else {
+                        remoteCandidatesQueue.push(candidate);
+                    }
+                });
+            });
+        }
+
+        // Listen for Incoming Calls
+        function listenForIncomingCalls() {
+            onValue(ref(db, `incomingCalls/${currentUser.uid}`), async (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    // Show Incoming Call UI
+                    const accept = await confirm(`Incoming ${data.isVideo ? 'Video' : 'Voice'} Call from ${data.callerName}. Accept?`);
+                    if (accept) {
+                        await answerCall(data.callId, data.isVideo);
+                    } else {
+                        // Reject Call
+                        await update(ref(db, `calls/${data.callId}`), { rejected: true });
+                        await remove(ref(db, `incomingCalls/${currentUser.uid}`));
+                    }
+                }
+            });
+        }
+
+        // Answer Call
+        async function answerCall(callId, isVideo) {
+            currentCallId = callId;
+            const callDocRef = ref(db, `calls/${callId}`);
+            const callDataSpec = await get(callDocRef);
+            const callData = callDataSpec.val();
+            callStartTime = Date.now();
+
+            // 1. Get Media with constraints
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: isVideo ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false,
+                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+            });
+            document.getElementById('localVideo').srcObject = localStream;
+            document.getElementById('callScreen').classList.add('active');
+            document.getElementById('callStatus').textContent = 'Connected';
+
+            // Log call answer
+            logCall(callData.offer.callerId, isVideo, 'incoming');
+
+            // 2. Create Peer Connection
+            peerConnection = new RTCPeerConnection(servers);
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            // 3. Handle Events
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    push(ref(db, `calls/${callId}/answerCandidates`), event.candidate.toJSON());
+                }
+            };
+
+            peerConnection.ontrack = event => {
+                document.getElementById('remoteVideo').srcObject = event.streams[0];
+            };
+
+            // 4. Set Remote Description (Offer)
+            const offerDescription = callData.offer;
+            let remoteCandidatesQueue = [];
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offerDescription));
+
+            // Process queued candidates
+            remoteCandidatesQueue.forEach(candidate => {
+                peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            });
+            remoteCandidatesQueue = [];
+
+            // 5. Create Answer
+            const answerDescription = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answerDescription);
+
+            const answer = {
+                type: answerDescription.type,
+                sdp: answerDescription.sdp
+            };
+
+            await update(callDocRef, { answer });
+
+            // 6. Listen for Offer Candidates
+            onValue(ref(db, `calls/${callId}/offerCandidates`), (snapshot) => {
+                snapshot.forEach((childSnapshot) => {
+                    const candidate = childSnapshot.val();
+                    if (peerConnection.currentRemoteDescription) {
+                        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    } else {
+                        remoteCandidatesQueue.push(candidate);
+                    }
+                });
+            });
+
+            // Clear incoming call notification
+            await remove(ref(db, `incomingCalls/${currentUser.uid}`));
+        }
+
+        async function endCall() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            if (peerConnection) {
+                peerConnection.close();
+            }
+            document.getElementById('callScreen').classList.remove('active');
+
+            // Cleanup in DB
+            if (currentCallId) {
+                try {
+                    await remove(ref(db, `calls/${currentCallId}`));
+                    // Also clear any incoming call notification for the receiver
+                    await remove(ref(db, `incomingCalls/${currentChatUser}`));
+                } catch (e) {
+                    console.log('Cleanup error:', e);
+                }
+            }
+
+            localStream = null;
+            peerConnection = null;
+            currentCallId = null;
+        }
+
+        document.getElementById('endCallBtn').addEventListener('click', endCall);
+
+        document.getElementById('muteBtn').addEventListener('click', function () {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                audioTrack.enabled = !audioTrack.enabled;
+                this.textContent = audioTrack.enabled ? '🎤' : '🔇';
+            }
+        });
+
+        // Privacy & Social Listeners
+        document.getElementById('hideLastSeenToggle').addEventListener('click', async function () {
+            hideLastSeen = !hideLastSeen;
+            this.classList.toggle('active');
+            if (currentUser) {
+                await set(ref(db, `users/${currentUser.uid}/hideLastSeen`), hideLastSeen);
+                setupPresence(); // Refresh presence
+            }
+        });
+
+        document.getElementById('selfDestructBtn').addEventListener('click', function () {
+            isSelfDestructEnabled = !isSelfDestructEnabled;
+            this.style.opacity = isSelfDestructEnabled ? '1' : '0.5';
+            this.style.color = isSelfDestructEnabled ? 'var(--primary-color)' : 'var(--text-color)';
+        });
+
+        // Push Notifications
+        async function requestPushPermission() {
+            if ("Notification" in window && Notification.permission !== "granted") {
+                await Notification.requestPermission();
+            }
+        }
+        requestPushPermission();
+
+        // Call Logging Helpers
+        async function logCall(peerId, isVideo, type) {
+            const peerSnap = await get(ref(db, `users/${peerId}`));
+            const peerName = peerSnap.exists() ? peerSnap.val().name : 'Unknown';
+            const logRef = push(ref(db, `callLogs/${currentUser.uid}`));
+            await set(logRef, {
+                peerId,
+                peerName,
+                isVideo,
+                type,
+                timestamp: Date.now()
+            });
+        }
+
+        async function loadCallLogs() {
+            const list = document.getElementById('callsList');
+            onValue(ref(db, `callLogs/${currentUser.uid}`), (snap) => {
+                list.innerHTML = '';
+                if (!snap.exists()) {
+                    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📞</div><p>No call history</p></div>';
+                    return;
+                }
+                const logs = Object.entries(snap.val()).reverse();
+                logs.forEach(([id, log]) => {
+                    const div = document.createElement('div');
+                    div.className = 'call-log-item';
+                    const icon = log.type === 'outgoing' ? '↗️' : '↙️';
+                    const callTypeIcon = log.isVideo ? '🎥' : '📞';
+                    const time = new Date(log.timestamp).toLocaleString();
+                    div.innerHTML = `
+                        <div class="call-icon">${callTypeIcon}</div>
+                        <div class="call-details">
+                            <div style="font-weight:600;">${log.peerName} ${icon}</div>
+                            <div class="call-time">${time}</div>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        // Global Click to close pickers
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('active'));
+        });
+
+        console.log('✅ ApnaChat initialized - Advanced Privacy \u0026 Social ready');
+    </script>
+</body>
+
+</html>
