@@ -1319,7 +1319,7 @@
         import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js';
 
         // ⚠️ REPLACE WITH YOUR FIREBASE CONFIG
-        const firebaseConfig = {
+                const firebaseConfig = {
   apiKey: "AIzaSyDDVtP8E7KVr5w15GeKCVKTcwAB--nspco",
   authDomain: "circle-20122.firebaseapp.com",
   databaseURL: "https://circle-20122-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -1930,10 +1930,12 @@
         function loadContacts() {
             const groupsList = document.getElementById('groupsList');
             const privateList = document.getElementById('privateChatsList');
-            groupsList.innerHTML = '';
-            privateList.innerHTML = '';
-
-            let hasAnyChat = false;
+            // Initial clear needed, but subsequent updates shouldn't clear
+            // Actually, we should just let the onValue handle it.
+            // But if we navigate away and back, we want fresh state?
+            // Since onValue fires immediately with current state, we don't need manual clear if onValue handles diffing.
+            // But for simplicity, we'll clear once here, then let onValue manage.
+            // However, onValue runs async.
 
             const checkEmpty = () => {
                 const container = document.getElementById('chatsListContainer');
@@ -1959,13 +1961,22 @@
             // Listen for Groups
             const groupsUnsub = onValue(ref(db, `groups`), (groupsSnap) => {
                 trackDataTransfer(groupsSnap.val());
-                groupsList.innerHTML = '';
+
                 if (groupsSnap.exists()) {
+                    const currentGroups = new Set();
                     Object.entries(groupsSnap.val()).forEach(([groupId, groupData]) => {
                         if (groupData.members && groupData.members[currentUser.uid]) {
+                            currentGroups.add(`chat-${groupId}`);
                             addChatToUI(groupId, groupData, true);
                         }
                     });
+
+                    // Simple cleanup for removed groups
+                    Array.from(groupsList.children).forEach(child => {
+                        if (!currentGroups.has(child.id)) child.remove();
+                    });
+                } else {
+                    groupsList.innerHTML = '';
                 }
                 checkEmpty();
             });
@@ -1975,15 +1986,24 @@
             const contactsRef = ref(db, `contacts/${currentUser.uid}`);
             const contactsUnsub = onValue(contactsRef, async (snapshot) => {
                 trackDataTransfer(snapshot.val());
-                privateList.innerHTML = '';
+
                 if (snapshot.exists()) {
+                    const currentContacts = new Set();
                     for (const [friendId, data] of Object.entries(snapshot.val())) {
+                        currentContacts.add(`chat-${getChatId(currentUser.uid, friendId)}`);
                         const friendData = await get(ref(db, `users/${friendId}`));
                         trackDataTransfer(friendData.val());
                         if (friendData.exists()) {
                             addChatToUI(friendId, friendData.val(), false);
                         }
                     }
+
+                    // Cleanup removed contacts
+                    Array.from(privateList.children).forEach(child => {
+                        if (!currentContacts.has(child.id)) child.remove();
+                    });
+                } else {
+                    privateList.innerHTML = '';
                 }
                 checkEmpty();
             });
